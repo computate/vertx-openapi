@@ -98,9 +98,12 @@ public class OpenAPILoaderImpl implements OpenAPILoader {
 
   @Override
   public JsonObject solveIfNeeded(JsonObject obj) {
-    if (obj.containsKey("$ref"))
-      return getCached(JsonPointer.fromURI(URI.create(obj.getString("$ref"))));
-    else return obj;
+    if (obj.containsKey("$ref")) {
+      JsonObject o = getCached(JsonPointer.fromURI(URI.create(obj.getString("$ref"))));
+      if (!o.equals(obj))
+        return solveIfNeeded(o);
+    }
+    return obj;
   }
 
   @Override
