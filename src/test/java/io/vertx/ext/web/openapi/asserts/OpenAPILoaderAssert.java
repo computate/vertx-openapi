@@ -1,9 +1,9 @@
-package io.vertx.ext.openapi.asserts;
+package io.vertx.ext.web.openapi.asserts;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.openapi.JsonPointerIteratorWithLoader;
-import io.vertx.ext.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.JsonPointerIteratorWithLoader;
+import io.vertx.ext.web.openapi.OpenAPILoader;
 import org.assertj.core.api.AbstractAssert;
 
 import java.net.URI;

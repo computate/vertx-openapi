@@ -1,4 +1,7 @@
 {
+  "id": "https://spec.openapis.org/oas/3.0/schema/2019-04-02",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Validation schema for OpenAPI Specification 3.0.X.",
   "type": "object",
   "required": [
     "openapi",
@@ -32,7 +35,8 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/Tag"
-      }
+      },
+      "uniqueItems": true
     },
     "paths": {
       "$ref": "#/definitions/Paths"
@@ -42,7 +46,8 @@
     }
   },
   "patternProperties": {
-    "^x-": {}
+    "^x-": {
+    }
   },
   "additionalProperties": false,
   "definitions": {
@@ -51,13 +56,12 @@
       "required": [
         "$ref"
       ],
-      "properties": {
-        "$ref": {
+      "patternProperties": {
+        "^\\$ref$": {
           "type": "string",
           "format": "uri-reference"
         }
-      },
-      "description": "A simple object to allow referencing other components in the specification, internally and externally.  The Reference Object is defined by JSON Reference and follows the same structure, behavior and rules.   For this specification, reference resolution is done as defined by the JSON Reference specification and not by the JSON Schema specification."
+      }
     },
     "Info": {
       "type": "object",
@@ -87,10 +91,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "The object provides metadata about the API. The metadata can be used by the clients if needed, and can be presented in editing or documentation generation tools for convenience."
+      "additionalProperties": false
     },
     "Contact": {
       "type": "object",
@@ -108,10 +112,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Contact information for the exposed API."
+      "additionalProperties": false
     },
     "License": {
       "type": "object",
@@ -128,10 +132,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "License information for the exposed API."
+      "additionalProperties": false
     },
     "Server": {
       "type": "object",
@@ -153,10 +157,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "An object representing a Server."
+      "additionalProperties": false
     },
     "ServerVariable": {
       "type": "object",
@@ -178,10 +182,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "An object representing a Server Variable for server URL template substitution."
+      "additionalProperties": false
     },
     "Components": {
       "type": "object",
@@ -192,10 +196,10 @@
             "^[a-zA-Z0-9\\.\\-_]+$": {
               "oneOf": [
                 {
-                  "$ref": "#/definitions/Reference"
+                  "$ref": "#/definitions/Schema"
                 },
                 {
-                  "$ref": "#/definitions/Schema"
+                  "$ref": "#/definitions/Reference"
                 }
               ]
             }
@@ -323,10 +327,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Holds a set of reusable objects for different aspects of the OAS. All objects defined within the components object will have no effect on the API unless they are explicitly referenced from properties outside the components object."
+      "additionalProperties": false
     },
     "Schema": {
       "type": "object",
@@ -397,8 +401,10 @@
         },
         "enum": {
           "type": "array",
-          "items": {},
-          "minItems": 1
+          "items": {
+          },
+          "minItems": 1,
+          "uniqueItems": false
         },
         "type": {
           "type": "string",
@@ -503,7 +509,8 @@
         "format": {
           "type": "string"
         },
-        "default": {},
+        "default": {
+        },
         "nullable": {
           "type": "boolean",
           "default": false
@@ -519,7 +526,8 @@
           "type": "boolean",
           "default": false
         },
-        "example": {},
+        "example": {
+        },
         "externalDocs": {
           "$ref": "#/definitions/ExternalDocumentation"
         },
@@ -532,10 +540,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "The Schema Object allows the definition of input and output data types. These types can be objects, but also primitives and arrays. This object is an extended subset of the JSON Schema Specification Wright Draft 00.  Further information about the properties can be found in JSON Schema Core and JSON Schema Validation. Unless stated otherwise, the property definitions follow the JSON Schema specification as referenced here."
+      "additionalProperties": false
     },
     "Discriminator": {
       "type": "object",
@@ -552,8 +560,7 @@
             "type": "string"
           }
         }
-      },
-      "description": "When request bodies or response payloads may be one of a number of different schemas, a `discriminator` object can be used to aid in serialization, deserialization, and validation.  The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.  Note, when using the discriminator, _inline_ schemas will not be considered when using the discriminator."
+      }
     },
     "XML": {
       "type": "object",
@@ -578,10 +585,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "A metadata object that allows for more fine-tuned XML model definitions.  When using arrays, XML element names are *not* inferred (for singular/plural forms) and the `name` property SHOULD be used to add that information. See examples for expected behavior."
+      "additionalProperties": false
     },
     "Response": {
       "type": "object",
@@ -593,6 +600,7 @@
           "type": "string"
         },
         "headers": {
+          "type": "object",
           "additionalProperties": {
             "oneOf": [
               {
@@ -625,23 +633,12 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Describes a single response from an API Operation, including design-time, static  `links` to operations based on the response."
+      "additionalProperties": false
     },
     "MediaType": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/MediaTypeWithExample"
-        },
-        {
-          "$ref": "#/definitions/MediaTypeWithExamples"
-        }
-      ],
-      "description": "Each Media Type Object provides schema and examples for a the media type identified by its key.  Media Type Objects can be used in a Content Object."
-    },
-    "MediaTypeWithExample": {
       "type": "object",
       "properties": {
         "schema": {
@@ -654,35 +651,7 @@
             }
           ]
         },
-        "example": {},
-        "encoding": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Encoding"
-          }
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Each Media Type Object provides schema and examples for a the media type identified by its key.  Media Type Objects can be used in a Content Object."
-    },
-    "MediaTypeWithExamples": {
-      "type": "object",
-      "required": [
-        "examples"
-      ],
-      "properties": {
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
+        "example": {
         },
         "examples": {
           "type": "object",
@@ -705,10 +674,15 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false,
-      "description": "Each Media Type Object provides schema and examples for a the media type identified by its key.  Media Type Objects can be used in a Content Object."
+      "allOf": [
+        {
+          "$ref": "#/definitions/ExampleXORExamples"
+        }
+      ]
     },
     "Example": {
       "type": "object",
@@ -719,44 +693,21 @@
         "description": {
           "type": "string"
         },
-        "value": {},
+        "value": {
+        },
         "externalValue": {
           "type": "string",
           "format": "uri-reference"
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
     "Header": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/HeaderWithSchema"
-        },
-        {
-          "$ref": "#/definitions/HeaderWithContent"
-        }
-      ],
-      "description": "The Header Object follows the structure of the Parameter Object, with the following changes:  1. `name` MUST NOT be specified, it is given in the Headers Object. 1. `in` MUST NOT be specified, it is implicitly in `header`. 1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, `style`)."
-    },
-    "HeaderWithSchema": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/HeaderWithSchemaWithExample"
-        },
-        {
-          "$ref": "#/definitions/HeaderWithSchemaWithExamples"
-        }
-      ],
-      "description": "The Header Object follows the structure of the Parameter Object, with the following changes:  1. `name` MUST NOT be specified, it is given in the Headers Object. 1. `in` MUST NOT be specified, it is implicitly in `header`. 1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, `style`)."
-    },
-    "HeaderWithSchemaWithExample": {
       "type": "object",
-      "required": [
-        "schema"
-      ],
       "properties": {
         "description": {
           "type": "string"
@@ -797,59 +748,15 @@
             }
           ]
         },
-        "example": {}
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "The Header Object follows the structure of the Parameter Object, with the following changes:  1. `name` MUST NOT be specified, it is given in the Headers Object. 1. `in` MUST NOT be specified, it is implicitly in `header`. 1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, `style`)."
-    },
-    "HeaderWithSchemaWithExamples": {
-      "type": "object",
-      "required": [
-        "schema",
-        "examples"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
+        "content": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MediaType"
+          },
+          "minProperties": 1,
+          "maxProperties": 1
         },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "simple"
-          ],
-          "default": "simple"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
+        "example": {
         },
         "examples": {
           "type": "object",
@@ -866,46 +773,18 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "The Header Object follows the structure of the Parameter Object, with the following changes:  1. `name` MUST NOT be specified, it is given in the Headers Object. 1. `in` MUST NOT be specified, it is implicitly in `header`. 1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, `style`)."
-    },
-    "HeaderWithContent": {
-      "type": "object",
-      "required": [
-        "content"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "content": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/MediaType"
-          },
-          "minProperties": 1,
-          "maxProperties": 1
+        "^x-": {
         }
       },
-      "patternProperties": {
-        "^x-": {}
-      },
       "additionalProperties": false,
-      "description": "The Header Object follows the structure of the Parameter Object, with the following changes:  1. `name` MUST NOT be specified, it is given in the Headers Object. 1. `in` MUST NOT be specified, it is implicitly in `header`. 1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, `style`)."
+      "allOf": [
+        {
+          "$ref": "#/definitions/ExampleXORExamples"
+        },
+        {
+          "$ref": "#/definitions/SchemaXORContent"
+        }
+      ]
     },
     "Paths": {
       "type": "object",
@@ -913,10 +792,10 @@
         "^\\/": {
           "$ref": "#/definitions/PathItem"
         },
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Holds the relative paths to the individual endpoints and their operations. The path is appended to the URL from the `Server Object` in order to construct the full URL.  The Paths MAY be empty, due to ACL constraints."
+      "additionalProperties": false
     },
     "PathItem": {
       "type": "object",
@@ -929,30 +808,6 @@
         },
         "description": {
           "type": "string"
-        },
-        "get": {
-          "$ref": "#/definitions/Operation"
-        },
-        "put": {
-          "$ref": "#/definitions/Operation"
-        },
-        "post": {
-          "$ref": "#/definitions/Operation"
-        },
-        "delete": {
-          "$ref": "#/definitions/Operation"
-        },
-        "options": {
-          "$ref": "#/definitions/Operation"
-        },
-        "head": {
-          "$ref": "#/definitions/Operation"
-        },
-        "patch": {
-          "$ref": "#/definitions/Operation"
-        },
-        "trace": {
-          "$ref": "#/definitions/Operation"
         },
         "servers": {
           "type": "array",
@@ -971,14 +826,18 @@
                 "$ref": "#/definitions/Reference"
               }
             ]
-          }
+          },
+          "uniqueItems": true
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^(get|put|post|delete|options|head|patch|trace)$": {
+          "$ref": "#/definitions/Operation"
+        },
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Describes the operations available on a single path. A Path Item MAY be empty, due to ACL constraints. The path itself is still exposed to the documentation viewer but they will not know which operations and parameters are available."
+      "additionalProperties": false
     },
     "Operation": {
       "type": "object",
@@ -1015,7 +874,8 @@
                 "$ref": "#/definitions/Reference"
               }
             ]
-          }
+          },
+          "uniqueItems": true
         },
         "requestBody": {
           "oneOf": [
@@ -1061,10 +921,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Describes a single API operation on a path."
+      "additionalProperties": false
     },
     "Responses": {
       "type": "object",
@@ -1081,7 +941,7 @@
         }
       },
       "patternProperties": {
-        "[1-5](?:\\d{2}|XX)": {
+        "^[1-5](?:\\d{2}|XX)$": {
           "oneOf": [
             {
               "$ref": "#/definitions/Response"
@@ -1091,18 +951,11 @@
             }
           ]
         },
-        "^x-": {}
+        "^x-": {
+        }
       },
       "minProperties": 1,
-      "additionalProperties": false,
-      "not": {
-        "type": "object",
-        "patternProperties": {
-          "^x-": {}
-        },
-        "additionalProperties": false
-      },
-      "description": "A container for the expected responses of an operation. The container maps a HTTP response code to the expected response.  It is not expected for the documentation to necessarily cover all possible HTTP response codes, since they may not be known in advance. However, it is expected for the documentation to cover a successful operation response and any known errors.  The `default` MAY be used as a default response object for all HTTP codes  that are not covered individually by the specification.  The `Responses Object` MUST contain at least one response code, and it  SHOULD be the response for a successful operation call."
+      "additionalProperties": false
     },
     "SecurityRequirement": {
       "type": "object",
@@ -1111,8 +964,7 @@
         "items": {
           "type": "string"
         }
-      },
-      "description": "Lists the required security schemes to execute this operation. The name used for each property MUST correspond to a security scheme declared in the Security Schemes under the Components Object.  Security Requirement Objects that contain multiple schemes require that all schemes MUST be satisfied for a request to be authorized. This enables support for scenarios where there multiple query parameters or HTTP headers are required to convey security information.  When a list of Security Requirement Objects is defined on the Open API object or Operation Object, only one of Security Requirement Objects in the list needs to be satisfied to authorize."
+      }
     },
     "Tag": {
       "type": "object",
@@ -1131,10 +983,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Allows adding meta data to a single tag that is used by the Operation Object. It is not mandatory to have a Tag Object per tag used there."
+      "additionalProperties": false
     },
     "ExternalDocumentation": {
       "type": "object",
@@ -1151,135 +1003,87 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Allows referencing an external resource for extended documentation."
+      "additionalProperties": false
+    },
+    "ExampleXORExamples": {
+      "description": "Example and examples are mutually exclusive",
+      "not": {
+        "required": [
+          "example",
+          "examples"
+        ]
+      }
+    },
+    "SchemaXORContent": {
+      "description": "Schema and content are mutually exclusive, at least one is required",
+      "not": {
+        "required": [
+          "schema",
+          "content"
+        ]
+      },
+      "oneOf": [
+        {
+          "required": [
+            "schema"
+          ]
+        },
+        {
+          "required": [
+            "content"
+          ],
+          "description": "Some properties are not allowed if content is present",
+          "allOf": [
+            {
+              "not": {
+                "required": [
+                  "style"
+                ]
+              }
+            },
+            {
+              "not": {
+                "required": [
+                  "explode"
+                ]
+              }
+            },
+            {
+              "not": {
+                "required": [
+                  "allowReserved"
+                ]
+              }
+            },
+            {
+              "not": {
+                "required": [
+                  "example"
+                ]
+              }
+            },
+            {
+              "not": {
+                "required": [
+                  "examples"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     "Parameter": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/ParameterWithSchema"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithContent"
-        }
-      ],
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchema": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExample"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExamples"
-        }
-      ],
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExample": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExampleInPath"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExampleInQuery"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExampleInHeader"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExampleInCookie"
-        }
-      ],
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExampleInPath": {
       "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema",
-        "required"
-      ],
       "properties": {
         "name": {
           "type": "string"
         },
         "in": {
-          "type": "string",
-          "enum": [
-            "path"
-          ]
-        },
-        "description": {
           "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "enum": [
-            true
-          ]
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "matrix",
-            "label",
-            "simple"
-          ],
-          "default": "simple"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "example": {}
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExampleInQuery": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "query"
-          ]
         },
         "description": {
           "type": "string"
@@ -1297,14 +1101,7 @@
           "default": false
         },
         "style": {
-          "type": "string",
-          "enum": [
-            "form",
-            "spaceDelimited",
-            "pipeDelimited",
-            "deepObject"
-          ],
-          "default": "form"
+          "type": "string"
         },
         "explode": {
           "type": "boolean"
@@ -1322,520 +1119,6 @@
               "$ref": "#/definitions/Reference"
             }
           ]
-        },
-        "example": {}
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExampleInHeader": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "header"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "simple"
-          ],
-          "default": "simple"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "example": {}
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExampleInCookie": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "cookie"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "form"
-          ],
-          "default": "form"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "example": {}
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExamples": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExamplesInPath"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExamplesInQuery"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExamplesInHeader"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithSchemaWithExamplesInCookie"
-        }
-      ],
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExamplesInPath": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema",
-        "required",
-        "examples"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "path"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "enum": [
-            true
-          ]
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "matrix",
-            "label",
-            "simple"
-          ],
-          "default": "simple"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "examples": {
-          "type": "object",
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "$ref": "#/definitions/Example"
-              },
-              {
-                "$ref": "#/definitions/Reference"
-              }
-            ]
-          }
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExamplesInQuery": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema",
-        "examples"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "query"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "form",
-            "spaceDelimited",
-            "pipeDelimited",
-            "deepObject"
-          ],
-          "default": "form"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "examples": {
-          "type": "object",
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "$ref": "#/definitions/Example"
-              },
-              {
-                "$ref": "#/definitions/Reference"
-              }
-            ]
-          }
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExamplesInHeader": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema",
-        "examples"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "header"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "simple"
-          ],
-          "default": "simple"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "examples": {
-          "type": "object",
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "$ref": "#/definitions/Example"
-              },
-              {
-                "$ref": "#/definitions/Reference"
-              }
-            ]
-          }
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithSchemaWithExamplesInCookie": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "schema",
-        "examples"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "cookie"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "style": {
-          "type": "string",
-          "enum": [
-            "form"
-          ],
-          "default": "form"
-        },
-        "explode": {
-          "type": "boolean"
-        },
-        "allowReserved": {
-          "type": "boolean",
-          "default": false
-        },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
-        "examples": {
-          "type": "object",
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "$ref": "#/definitions/Example"
-              },
-              {
-                "$ref": "#/definitions/Reference"
-              }
-            ]
-          }
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithContent": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/ParameterWithContentInPath"
-        },
-        {
-          "$ref": "#/definitions/ParameterWithContentNotInPath"
-        }
-      ],
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithContentInPath": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "content"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "in": {
-          "type": "string",
-          "enum": [
-            "path"
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "enum": [
-            true
-          ]
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
         },
         "content": {
           "type": "object",
@@ -1844,62 +1127,125 @@
           },
           "minProperties": 1,
           "maxProperties": 1
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
-    },
-    "ParameterWithContentNotInPath": {
-      "type": "object",
-      "required": [
-        "name",
-        "in",
-        "content"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
         },
-        "in": {
-          "type": "string",
-          "enum": [
-            "query",
-            "header",
-            "cookie"
-          ]
+        "example": {
         },
-        "description": {
-          "type": "string"
-        },
-        "required": {
-          "type": "boolean",
-          "default": false
-        },
-        "deprecated": {
-          "type": "boolean",
-          "default": false
-        },
-        "allowEmptyValue": {
-          "type": "boolean",
-          "default": false
-        },
-        "content": {
+        "examples": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/MediaType"
-          },
-          "minProperties": 1,
-          "maxProperties": 1
+            "oneOf": [
+              {
+                "$ref": "#/definitions/Example"
+              },
+              {
+                "$ref": "#/definitions/Reference"
+              }
+            ]
+          }
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false,
-      "description": "Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location."
+      "required": [
+        "name",
+        "in"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/definitions/ExampleXORExamples"
+        },
+        {
+          "$ref": "#/definitions/SchemaXORContent"
+        },
+        {
+          "$ref": "#/definitions/ParameterLocation"
+        }
+      ]
+    },
+    "ParameterLocation": {
+      "description": "Parameter location",
+      "oneOf": [
+        {
+          "description": "Parameter in path",
+          "required": [
+            "required"
+          ],
+          "properties": {
+            "in": {
+              "enum": [
+                "path"
+              ]
+            },
+            "style": {
+              "enum": [
+                "matrix",
+                "label",
+                "simple"
+              ],
+              "default": "simple"
+            },
+            "required": {
+              "enum": [
+                true
+              ]
+            }
+          }
+        },
+        {
+          "description": "Parameter in query",
+          "properties": {
+            "in": {
+              "enum": [
+                "query"
+              ]
+            },
+            "style": {
+              "enum": [
+                "form",
+                "spaceDelimited",
+                "pipeDelimited",
+                "deepObject"
+              ],
+              "default": "form"
+            }
+          }
+        },
+        {
+          "description": "Parameter in header",
+          "properties": {
+            "in": {
+              "enum": [
+                "header"
+              ]
+            },
+            "style": {
+              "enum": [
+                "simple"
+              ],
+              "default": "simple"
+            }
+          }
+        },
+        {
+          "description": "Parameter in cookie",
+          "properties": {
+            "in": {
+              "enum": [
+                "cookie"
+              ]
+            },
+            "style": {
+              "enum": [
+                "form"
+              ],
+              "default": "form"
+            }
+          }
+        }
+      ]
     },
     "RequestBody": {
       "type": "object",
@@ -1922,10 +1268,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Describes a single request body."
+      "additionalProperties": false
     },
     "SecurityScheme": {
       "oneOf": [
@@ -1941,8 +1287,7 @@
         {
           "$ref": "#/definitions/OpenIdConnectSecurityScheme"
         }
-      ],
-      "description": "Allows the definition of a security scheme that can be used by the operations. Supported schemes are HTTP authentication, an API key (either as a header or as a query parameter) and OAuth2's common flows (implicit, password, application and access code)."
+      ]
     },
     "APIKeySecurityScheme": {
       "type": "object",
@@ -1974,32 +1319,12 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
     "HTTPSecurityScheme": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/NonBearerHTTPSecurityScheme"
-        },
-        {
-          "$ref": "#/definitions/BearerHTTPSecurityScheme"
-        }
-      ]
-    },
-    "NonBearerHTTPSecurityScheme": {
-      "not": {
-        "type": "object",
-        "properties": {
-          "scheme": {
-            "type": "string",
-            "enum": [
-              "bearer"
-            ]
-          }
-        }
-      },
       "type": "object",
       "required": [
         "scheme",
@@ -2009,51 +1334,53 @@
         "scheme": {
           "type": "string"
         },
-        "description": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "http"
-          ]
-        }
-      },
-      "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false
-    },
-    "BearerHTTPSecurityScheme": {
-      "type": "object",
-      "required": [
-        "type",
-        "scheme"
-      ],
-      "properties": {
-        "scheme": {
-          "type": "string",
-          "enum": [
-            "bearer"
-          ]
-        },
         "bearerFormat": {
           "type": "string"
         },
+        "description": {
+          "type": "string"
+        },
         "type": {
           "type": "string",
           "enum": [
             "http"
           ]
-        },
-        "description": {
-          "type": "string"
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "description": "Bearer",
+          "properties": {
+            "scheme": {
+              "enum": [
+                "bearer"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Non Bearer",
+          "not": {
+            "required": [
+              "bearerFormat"
+            ]
+          },
+          "properties": {
+            "scheme": {
+              "not": {
+                "enum": [
+                  "bearer"
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     "OAuth2SecurityScheme": {
       "type": "object",
@@ -2076,7 +1403,8 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
@@ -2102,7 +1430,8 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
@@ -2123,10 +1452,10 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
-      "additionalProperties": false,
-      "description": "Allows configuration of the supported OAuth Flows."
+      "additionalProperties": false
     },
     "ImplicitOAuthFlow": {
       "type": "object",
@@ -2151,7 +1480,8 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
@@ -2177,7 +1507,8 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
@@ -2203,7 +1534,8 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
@@ -2234,33 +1566,28 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
+        "^x-": {
+        }
       },
       "additionalProperties": false
     },
     "Link": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/LinkWithOperationRef"
-        },
-        {
-          "$ref": "#/definitions/LinkWithOperationId"
-        }
-      ],
-      "description": "The `Link Object` is responsible for defining a possible operation based on a single response."
-    },
-    "LinkWithOperationRef": {
       "type": "object",
       "properties": {
+        "operationId": {
+          "type": "string"
+        },
         "operationRef": {
           "type": "string",
           "format": "uri-reference"
         },
         "parameters": {
           "type": "object",
-          "additionalProperties": {}
+          "additionalProperties": {
+          }
         },
-        "requestBody": {},
+        "requestBody": {
+        },
         "description": {
           "type": "string"
         },
@@ -2269,34 +1596,17 @@
         }
       },
       "patternProperties": {
-        "^x-": {}
-      },
-      "additionalProperties": false,
-      "description": "The `Link Object` is responsible for defining a possible operation based on a single response."
-    },
-    "LinkWithOperationId": {
-      "type": "object",
-      "properties": {
-        "operationId": {
-          "type": "string"
-        },
-        "parameters": {
-          "type": "object",
-          "additionalProperties": {}
-        },
-        "requestBody": {},
-        "description": {
-          "type": "string"
-        },
-        "server": {
-          "$ref": "#/definitions/Server"
+        "^x-": {
         }
       },
-      "patternProperties": {
-        "^x-": {}
-      },
       "additionalProperties": false,
-      "description": "The `Link Object` is responsible for defining a possible operation based on a single response."
+      "not": {
+        "description": "Operation Id and Operation Ref are mutually exclusive",
+        "required": [
+          "operationId",
+          "operationRef"
+        ]
+      }
     },
     "Callback": {
       "type": "object",
@@ -2304,9 +1614,9 @@
         "$ref": "#/definitions/PathItem"
       },
       "patternProperties": {
-        "^x-": {}
-      },
-      "description": "A map of possible out-of band callbacks related to the parent operation. Each value in the map is a Path Item Object that describes a set of requests that may be initiated by the API provider and the expected responses. The key value used to identify the callback object is an expression, evaluated at runtime, that identifies a URL to use for the callback operation."
+        "^x-": {
+        }
+      }
     },
     "Encoding": {
       "type": "object",
@@ -2337,9 +1647,7 @@
           "default": false
         }
       },
-      "additionalProperties": false,
-      "description": "An object representing multipart region encoding for `requestBody` objects."
+      "additionalProperties": false
     }
-  },
-  "description": "This is the root document object for the API specification. It combines what previously was the Resource Listing and API Declaration (version 1.2 and earlier) together into one document."
+  }
 }

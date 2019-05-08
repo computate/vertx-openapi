@@ -1,4 +1,4 @@
-package io.vertx.ext.openapi;
+package io.vertx.ext.web.openapi;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.impl.JsonPointerIteratorImpl;

@@ -1,4 +1,4 @@
-package io.vertx.ext.openapi;
+package io.vertx.ext.web.openapi;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static io.vertx.ext.openapi.asserts.MyAssertions.assertThat;
+import static io.vertx.ext.web.openapi.asserts.MyAssertions.assertThat;
 
 @ExtendWith(VertxExtension.class)
 @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)

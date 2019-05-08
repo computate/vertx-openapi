@@ -1,8 +1,8 @@
-package io.vertx.ext.openapi.asserts;
+package io.vertx.ext.web.openapi.asserts;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.OpenAPILoader;
 
 public class MyAssertions {
 

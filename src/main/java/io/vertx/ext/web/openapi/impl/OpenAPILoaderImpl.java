@@ -1,4 +1,4 @@
-package io.vertx.ext.openapi.impl;
+package io.vertx.ext.web.openapi.impl;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.netty.handler.codec.http.QueryStringEncoder;
@@ -16,8 +16,8 @@ import io.vertx.ext.json.schema.*;
 import io.vertx.ext.json.schema.draft7.Draft7SchemaParser;
 import io.vertx.ext.json.schema.generic.URIUtils;
 import io.vertx.ext.json.schema.generic.ObservableFuture;
-import io.vertx.ext.openapi.OpenAPILoader;
-import io.vertx.ext.openapi.OpenAPILoaderOptions;
+import io.vertx.ext.web.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
 
 import java.net.URI;
 import java.nio.file.Files;

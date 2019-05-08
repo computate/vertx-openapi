@@ -1,10 +1,10 @@
-package io.vertx.ext.openapi;
+package io.vertx.ext.web.openapi;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.openapi.impl.OpenAPILoaderImpl;
+import io.vertx.ext.web.openapi.impl.OpenAPILoaderImpl;
 
 public interface OpenAPILoader {
 

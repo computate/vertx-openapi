@@ -1,4 +1,4 @@
-package io.vertx.ext.openapi.asserts;
+package io.vertx.ext.web.openapi.asserts;
 
 import io.vertx.core.json.pointer.JsonPointer;
 import org.assertj.core.api.AbstractAssert;
