@@ -1,4 +1,4 @@
-package io.vertx.ext.web.openapi;
+package io.vertx.ext.web.api.contract.openapi3;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
