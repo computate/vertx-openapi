@@ -46,7 +46,7 @@ public class RouterFactoryOptions {
     RouterFactoryOptionsConverter.fromJson(json, this);
   }
 
-  public RouterFactoryOptions(io.vertx.ext.web.api.contract.RouterFactoryOptions other) {
+  public RouterFactoryOptions(RouterFactoryOptions other) {
     this.mountNotImplementedHandler = other.isMountNotImplementedHandler();
     this.requireSecurityHandlers = other.isRequireSecurityHandlers();
     this.mountResponseContentTypeHandler = other.isMountResponseContentTypeHandler();

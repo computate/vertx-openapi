@@ -28,11 +28,13 @@ public class RouterFactoryException extends RuntimeException {
      */
     MISSING_SECURITY_HANDLER,
     /**
-     * You are trying to use two or more path parameters with a combination of parameters/name/styles/explode not supported
+     * You are trying to use a spec feature not supported by this package.
+     * Most likely you you have defined in you contract
+     * two or more path parameters with a combination of parameters/name/styles/explode not supported
      */
-    PATH_PARAMETERS_COMBINATION_NOT_SUPPORTED,
+    UNSUPPORTED_SPEC,
     /**
-     * You specified an interface not annotated with io.vertx.ext.web.api.generator.WebApiProxyGen while calling {@link RouterFactory#mountServiceInterface(Class, String)}
+     * You specified an interface not annotated with {@link io.vertx.ext.web.api.service.WebApiServiceGen} while calling {@link RouterFactory#mountServiceInterface(Class, String)}
      */
     WRONG_INTERFACE
   }
@@ -77,6 +79,10 @@ public class RouterFactoryException extends RuntimeException {
 
   public static RouterFactoryException createWrongInterface(Class i) {
     return new RouterFactoryException("Interface " + i.getName() + " is not annotated with @WebApiServiceProxy", ErrorType.WRONG_INTERFACE);
+  }
+
+  public static RouterFactoryException createUnsupportedSpecFeature(String message) {
+    return new RouterFactoryException(message, ErrorType.UNSUPPORTED_SPEC, null);
   }
 
 }

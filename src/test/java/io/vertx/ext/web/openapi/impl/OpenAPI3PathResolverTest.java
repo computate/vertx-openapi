@@ -1,70 +1,88 @@
-package io.vertx.ext.web.openapi;
+package io.vertx.ext.web.openapi.impl;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.parser.OpenAPIV3Parser;
-import io.vertx.ext.web.api.contract.openapi3.impl.OpenAPI3PathResolver;
-import io.vertx.ext.web.api.contract.openapi3.impl.OpenApi3Utils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
+import io.vertx.ext.web.openapi.Operation;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 
+@ExtendWith(VertxExtension.class)
 public class OpenAPI3PathResolverTest {
 
-  OpenAPI testSpec;
+  OpenAPILoader loader;
+  JsonObject openapi;
 
-  @Rule
-  public ExternalResource res = new ExternalResource() {
-    private OpenAPI loadSwagger(String filename) {
-      return new OpenAPIV3Parser().readLocation(filename, null, OpenApi3Utils.getParseOptions()).getOpenAPI();
-    }
+  @BeforeEach
+  void setUp(Vertx vertx, VertxTestContext context) {
+    loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    loader
+      .loadOpenAPI("src/test/resources/specs/path_resolver_test.yaml")
+      .setHandler(ar -> {
+        if (ar.succeeded()) {
+          openapi = loader.getOpenAPIResolved();
+          context.completeNow();
+        } else context.failNow(ar.cause());
+      });
+  }
 
-    @Override
-    protected void before() {
-      testSpec = loadSwagger("src/test/resources/swaggers/path_resolver_test.yaml");
-    }
-
-    @Override
-    protected void after() { }
-
-  };
-
-  private Operation getOperation(String operationId) {
-    return testSpec
-      .getPaths()
-      .values()
+  private JsonObject getOperation(String operationId) {
+    return openapi
+      .getJsonObject("paths")
       .stream()
-      .flatMap(e -> e.readOperations().stream())
-      .filter(e -> e.getOperationId().equals(operationId))
-      .findFirst().orElse(null);
+      .map(Map.Entry::getValue)
+      .map(v -> (JsonObject)v)
+      .flatMap(j -> j
+        .stream()
+        .map(Map.Entry::getValue)
+        .map(v -> (JsonObject)v)
+      )
+      .filter(j -> j.getString("operationId").equals(operationId))
+      .findFirst()
+      .orElse(null);
   }
 
   private String getPath(String operationId) {
-    return testSpec
-      .getPaths()
-      .entrySet()
+    return openapi
+      .getJsonObject("paths")
       .stream()
-      .flatMap(e -> e
-        .getValue()
-        .readOperations()
-        .stream().map(e2 -> new AbstractMap.SimpleImmutableEntry<>(e.getKey(), e2)))
-      .filter(e -> e.getValue().getOperationId().equals(operationId))
-      .map(e -> e.getKey())
-      .findFirst().orElse(null);
+      .flatMap(j -> ((JsonObject)j.getValue())
+        .stream()
+        .map(Map.Entry::getValue)
+        .map(v -> new SimpleImmutableEntry<>(j.getKey(), (JsonObject)v))
+      )
+      .filter(e -> e.getValue().getString("operationId").equals(operationId))
+      .map(SimpleImmutableEntry::getKey)
+      .findFirst()
+      .orElse(null);
   }
 
   private OpenAPI3PathResolver instantiatePathResolver(String operationId){
-    return new OpenAPI3PathResolver(getPath(operationId), getOperation(operationId).getParameters());
+    return new OpenAPI3PathResolver(
+      getPath(operationId),
+      getOperation(operationId)
+        .getJsonArray("parameters", new JsonArray())
+        .stream()
+        .map(o -> (JsonObject)o)
+        .collect(Collectors.toList())
+    );
   }
 
   private void shouldMatchParameter(OpenAPI3PathResolver resolver, String path, String parameterName, String parameterValue) {

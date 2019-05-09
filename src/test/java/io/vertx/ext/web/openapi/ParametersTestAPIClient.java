@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * This class is used by OpenAPI3ParametersUnitTest
  */
-public class ParametersTestWebClient {
+public class ParametersTestAPIClient {
 
     private WebClient client;
     private int port;
@@ -27,7 +27,7 @@ public class ParametersTestWebClient {
 
     private MultiMap cookieParams;
 
-    public ParametersTestWebClient(Vertx vertx, String host, int port) {
+    public ParametersTestAPIClient(Vertx vertx, String host, int port) {
         client = WebClient.create(vertx, new WebClientOptions().setDefaultHost(host).setDefaultPort(port));
         this.port = port;
         this.host = host;
@@ -35,7 +35,7 @@ public class ParametersTestWebClient {
         cookieParams = MultiMap.caseInsensitiveMultiMap();
     }
 
-    public ParametersTestWebClient(WebClient client) {
+    public ParametersTestAPIClient(WebClient client) {
         this.client = client;
 
         cookieParams = MultiMap.caseInsensitiveMultiMap();

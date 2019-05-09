@@ -23,21 +23,21 @@ import java.util.stream.Collectors;
 
 /**
  * Interface for OpenAPI3RouterFactory. <br/>
- * To add an handler, use {@link RouterFactory#addHandlerByOperationId(String, Handler)}<br/>
+ * To add an handler, use {@link RouterFactory#operation(String)} (String, Handler)}<br/>
  * Usage example:
  * <pre>
  * {@code
- * OpenAPI3RouterFactory.create(vertx, "src/resources/spec.yaml", asyncResult -> {
+ * RouterFactory.create(vertx, "src/resources/spec.yaml", asyncResult -> {
  *  if (!asyncResult.succeeded()) {
  *     // IO failure or spec invalid
  *  } else {
  *     OpenAPI3RouterFactory routerFactory = asyncResult.result();
- *     routerFactory.addHandlerByOperationId("operation_id", routingContext -> {
+ *     routerFactory.operation("operation_id").handler(routingContext -> {
  *        // Do something
  *     }, routingContext -> {
  *        // Do something with failure handler
  *     });
- *     Router router = routerFactory.getRouter();
+ *     Router router = routerFactory.createRouter();
  *  }
  * });
  * }
@@ -140,7 +140,7 @@ public interface RouterFactory {
   JsonObject getOpenAPI();
 
   /**
-   * When set, this function is called while creating the payload of {@link io.vertx.ext.web.api.OperationRequest}
+   * When set, this function is called while creating the payload of {@link io.vertx.ext.web.api.service.ServiceRequest}
    * @param serviceExtraPayloadMapper
    * @return
    */

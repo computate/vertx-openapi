@@ -31,7 +31,7 @@ public abstract class BaseRouterFactoryTest {
   public Router router;
 
   @BeforeEach
-  public void setUp(Vertx vertx, VertxTestContext testContext) {
+  public void setUp(Vertx vertx) {
     schemaRouter = SchemaRouter.create(vertx, new SchemaRouterOptions());
     parser = OpenAPI3SchemaParser.create(new SchemaParserOptions(), schemaRouter);
 

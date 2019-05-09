@@ -1,11 +1,13 @@
 package io.vertx.ext.web.openapi;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.QueryStringEncoder;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
@@ -13,25 +15,22 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.multipart.MultipartForm;
-import io.vertx.ext.web.validation.RequestParameter;
-import io.vertx.ext.web.validation.RequestParameters;
+import io.vertx.ext.web.validation.*;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.vertx.ext.web.validation.testutils.TestRequest.*;
+import static io.vertx.ext.web.validation.testutils.ValidationTestUtils.*;
+import static io.vertx.ext.web.validation.testutils.ValidationTestUtils.badParameterResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -41,7 +40,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @author Francesco Guardiani @slinkydeveloper
  */
 @SuppressWarnings("unchecked")
-public class RouterFactoryTest extends BaseRouterFactoryTest {
+@ExtendWith(VertxExtension.class)
+public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
+
+  public static final String VALIDATION_SPEC = "src/test/resources/specs/validation_test.yaml";
 
   private Future<Void> startFileServer(Vertx vertx, VertxTestContext testContext) {
     Future<Void> f = Future.future();
@@ -697,8 +699,6 @@ public class RouterFactoryTest extends BaseRouterFactoryTest {
 
   @Test
   public void testJsonEmptyBody(Vertx vertx, VertxTestContext testContext) {
-    Checkpoint checkpoint = testContext.checkpoint(1);
-
     loadFactoryAndStartServer(vertx, "src/test/resources/specs/router_factory_test.yaml", testContext, routerFactory -> {
         routerFactory.setOptions(new RouterFactoryOptions().setRequireSecurityHandlers(false).setMountNotImplementedHandler(false));
 
@@ -717,7 +717,628 @@ public class RouterFactoryTest extends BaseRouterFactoryTest {
     }).setHandler(h ->
       testRequest(client, HttpMethod.POST, "/jsonBody/empty")
         .asserts(statusCode(200), jsonBodyResponse(new JsonObject().put("bodyEmpty", true)))
-        .send(testContext, checkpoint)
+        .send(testContext)
     );
+  }
+
+  @Test
+  public void commaSeparatedMultipartEncoding(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(3);
+    loadFactoryAndStartServer(vertx, "src/test/resources/swaggers/multipart.yaml", testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setRequireSecurityHandlers(false));
+      routerFactory.operation("testMultipartMultiple").handler(routingContext -> {
+        RequestParameters params = routingContext.get("parsedParameters");
+        routingContext
+          .response()
+          .setStatusCode(200)
+          .setStatusMessage(params.body().getJsonObject().getString("type"))
+          .end();
+      });
+    }).setHandler(h -> {
+      MultipartForm form1 = MultipartForm
+        .create()
+        .binaryFileUpload("file1", "random-file", "src/test/resources/random-file", "application/octet-stream")
+        .attribute("type", "application/octet-stream");
+      testRequest(client, HttpMethod.POST, "/testMultipartMultiple")
+        .asserts(statusCode(200), statusMessage("application/octet-stream"))
+        .sendMultipartForm(form1, testContext, checkpoint);
+
+      MultipartForm form2 =
+        MultipartForm
+          .create()
+          .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "text/plain")
+          .attribute("type", "text/plain");
+      testRequest(client, HttpMethod.POST, "/testMultipartMultiple")
+        .asserts(statusCode(200), statusMessage("text/plain"))
+        .sendMultipartForm(form2, testContext, checkpoint);
+
+      MultipartForm form3 =
+        MultipartForm
+          .create()
+          .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "application/json")
+          .attribute("type", "application/json");
+      testRequest(client, HttpMethod.POST, "/testMultipartMultiple")
+        .asserts(statusCode(400))
+        .sendMultipartForm(form3, testContext, checkpoint);
+
+    });
+  }
+
+  @Test
+  public void wildcardMultipartEncoding(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(3);
+    loadFactoryAndStartServer(vertx, "src/test/resources/swaggers/multipart.yaml", testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setRequireSecurityHandlers(false));
+      routerFactory.operation("testMultipartWildcard").handler(routingContext -> {
+        RequestParameters params = routingContext.get("parsedParameters");
+        routingContext
+          .response()
+          .setStatusCode(200)
+          .setStatusMessage(params.body().getJsonObject().getString("type"))
+          .end();
+      });
+    }).setHandler(h -> {
+      MultipartForm form1 =
+        MultipartForm
+          .create()
+          .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "text/plain")
+          .attribute("type", "text/plain");
+      testRequest(client, HttpMethod.POST, "/testMultipartWildcard")
+        .asserts(statusCode(200), statusMessage("text/plain"))
+        .sendMultipartForm(form1, testContext, checkpoint);
+
+      MultipartForm form2 =
+        MultipartForm
+          .create()
+          .binaryFileUpload("file1", "random.csv", "src/test/resources/random.csv", "text/csv")
+          .attribute("type", "text/csv");
+      testRequest(client, HttpMethod.POST, "/testMultipartWildcard")
+        .asserts(statusCode(200), statusMessage("text/csv"))
+        .sendMultipartForm(form2, testContext, checkpoint);
+
+      MultipartForm form3 =
+        MultipartForm
+          .create()
+          .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "application/json")
+          .attribute("type", "application/json");
+      testRequest(client, HttpMethod.POST, "/testMultipartWildcard")
+        .asserts(statusCode(400))
+        .sendMultipartForm(form3, testContext, checkpoint);
+    });
+  }
+
+  @Test
+  public void testQueryParamNotRequired(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("listPets")
+        .handler(routingContext -> routingContext.response().setStatusMessage("ok").end());
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/pets")
+        .asserts(statusCode(200), statusMessage("ok"))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testPathParameter(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(2);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("showPetById")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          routingContext.response().setStatusMessage(params.pathParameter("petId").toString()).end();
+        });
+    }).setHandler(h -> {
+      testRequest(client, HttpMethod.GET, "/pets/3")
+        .asserts(statusCode(200), statusMessage("3"))
+        .send(testContext, checkpoint);
+      testRequest(client, HttpMethod.GET, "/pets/three")
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "petId", ParameterLocation.PATH))
+        .send(testContext, checkpoint);
+    });
+  }
+
+  @Test
+  public void testQueryParameterArrayExploded(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("arrayTestFormExploded")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          String serialized = params
+            .queryParameter("parameter")
+            .getJsonArray()
+            .stream()
+            .map(Object::toString)
+            .collect(Collectors.joining(","));
+          routingContext.response().setStatusMessage(serialized).end();
+        });
+    }).setHandler(h -> {
+      QueryStringEncoder encoder = new QueryStringEncoder("/queryTests/arrayTests/formExploded");
+      List<String> values = new ArrayList<>();
+      values.add("4");
+      values.add("2");
+      values.add("26");
+      for (String s : values) {
+        encoder.addParam("parameter", s);
+      }
+      String serialized = String.join(",", values);
+
+      testRequest(client, HttpMethod.GET, encoder.toString())
+        .asserts(statusCode(200), statusMessage(serialized))
+        .send(testContext);
+    });
+  }
+
+  @Test
+  public void testQueryParameterArrayDefaultStyle(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(2);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("arrayTest")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          String serialized = params
+            .queryParameter("parameter")
+            .getJsonArray()
+            .stream()
+            .map(Object::toString)
+            .collect(Collectors.joining(","));
+          routingContext.response().setStatusMessage(serialized).end();
+        });
+    }).setHandler(h -> {
+      String serialized = String.join(",", "4", "2", "26");
+      testRequest(client, HttpMethod.GET, "/queryTests/arrayTests/default?parameter=" + serialized)
+        .asserts(statusCode(200), statusMessage(serialized))
+        .send(testContext, checkpoint);
+      testRequest(client, HttpMethod.GET, "/queryTests/arrayTests/default?parameter=" + String.join(",", "4", "1", "26"))
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.PATH));
+    });
+  }
+
+  @Test
+  public void testDefaultStringQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("testDefaultString")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").getString()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultString")
+        .asserts(statusCode(200), statusMessage("aString"))
+        .send(testContext)
+    );
+  }
+
+
+  @Test
+  public void testDefaultIntQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("testDefaultInt")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").getInteger().toString()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultInt")
+        .asserts(statusCode(200), statusMessage("1"))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testDefaultFloatQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("testDefaultFloat")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").getFloat().toString()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultFloat")
+        .asserts(statusCode(200), statusMessage("1.0"))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testDefaultDoubleQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("testDefaultDouble")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").getDouble().toString()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultDouble")
+        .asserts(statusCode(200), statusMessage("1.0"))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testAllowEmptyValueStringQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("testDefaultString")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            "" + ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").getString().length()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultString?parameter")
+        .asserts(statusCode(200), statusMessage("0"))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testAllowEmptyValueBooleanQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("testDefaultBoolean")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            "" + ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").toString()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultBoolean?parameter")
+        .asserts(statusCode(200), statusMessage("true"))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testQueryParameterByteFormat(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("byteFormatTest")
+        .handler(routingContext ->
+          routingContext.response().setStatusMessage(
+            "" + ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").toString()
+          ).end()
+        );
+    }).setHandler(h ->
+      testRequest(client, HttpMethod.GET, "/queryTests/byteFormat?parameter=Zm9vYmFyCg==")
+        .asserts(statusCode(200), statusMessage("Zm9vYmFyCg=="))
+        .send(testContext)
+    );
+  }
+
+  @Test
+  public void testFormArrayParameter(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(2);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("formArrayTest")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          String serialized = params
+            .body()
+            .getJsonObject()
+            .getJsonArray("values")
+            .stream()
+            .map(Object::toString)
+            .collect(Collectors.joining(","));
+          routingContext.response().setStatusMessage(
+            params.body().getJsonObject().getString("id") + serialized
+          ).end();
+        });
+    }).setHandler(h -> {
+      testRequest(client, HttpMethod.POST, "/formTests/arraytest")
+        .asserts(statusCode(200), statusMessage("a+b+c" + "10,8,4"))
+        .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "a+b+c").add("values", "10,8,4"), testContext, checkpoint);
+
+      testRequest(client, HttpMethod.POST, "/formTests/arraytest")
+        .asserts(statusCode(400))
+        .asserts(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
+        .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "id").add("values", "8,bla,2"), testContext, checkpoint);
+    });
+  }
+
+  @Test
+  public void testJsonBody(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(4);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("jsonBodyTest")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          routingContext
+            .response()
+            .setStatusCode(200)
+            .setStatusMessage("OK")
+            .putHeader("Content-Type", "application/json")
+            .end(params.body().getJsonObject().encode());
+        });
+    }).setHandler(h -> {
+      JsonObject valid = new JsonObject().put("id", "anId").put("values", new JsonArray().add(5).add(10).add(2));
+
+      testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
+        .asserts(statusCode(200), jsonBodyResponse(valid))
+        .sendJson(valid, testContext, checkpoint);
+
+      testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
+        .transformations(header("content-type", "application/json; charset=utf-8"))
+        .asserts(statusCode(200), jsonBodyResponse(valid))
+        .sendBuffer(valid.toBuffer(), testContext, checkpoint);
+
+      testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
+        .transformations(header("content-type", "application/superapplication+json"))
+        .asserts(statusCode(200), jsonBodyResponse(valid))
+        .sendBuffer(valid.toBuffer(), testContext, checkpoint);
+
+      JsonObject invalid = new JsonObject().put("id", "anId").put("values", new JsonArray().add(5).add("bla").add(2));
+
+      testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
+        .asserts(statusCode(400))
+        .asserts(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
+        .sendJson(invalid, testContext, checkpoint);
+
+    });
+  }
+
+  @Test
+  public void testRequiredJsonBody(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("createPets")
+        .handler(routingContext ->
+          routingContext
+            .response()
+            .setStatusCode(200)
+            .end()
+        );
+    }).setHandler(h -> {
+
+      testRequest(client, HttpMethod.POST, "/pets")
+        .asserts(statusCode(400))
+        .asserts(failurePredicateResponse())
+        .send(testContext);
+
+    });
+  }
+
+  @Test
+  public void testAllOfQueryParam(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(4);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("alloftest")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          routingContext
+            .response()
+            .setStatusMessage("" +
+              params.queryParameter("parameter").getJsonObject().getInteger("a") +
+              params.queryParameter("parameter").getJsonObject().getBoolean("b")
+            ).end();
+        });
+    }).setHandler(h -> {
+
+      testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,true")
+        .asserts(statusCode(200), statusMessage("5true"))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,")
+        .asserts(statusCode(200), statusMessage("5false"))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5")
+        .asserts(statusCode(200), statusMessage("5false"))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,bla")
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .send(testContext, checkpoint);
+
+    });
+  }
+
+  @Test
+  public void testQueryParameterAnyOf(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(3);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("anyOfTest")
+        .handler(routingContext ->
+          routingContext
+            .response()
+            .setStatusMessage(((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").toString())
+            .end()
+        );
+    }).setHandler(h -> {
+
+      testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=true")
+        .asserts(statusCode(200), statusMessage("true"))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=5")
+        .asserts(statusCode(200), statusMessage("5"))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=bla")
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .send(testContext, checkpoint);
+
+    });
+  }
+
+  @Test
+  public void testComplexMultipart(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(2);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("complexMultipartRequest")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          if (params.body() == null) {
+            routingContext.response().setStatusCode(200).end();
+          } else {
+            routingContext
+              .response()
+              .putHeader("content-type", "application/json")
+              .setStatusCode(200)
+              .end(params.body().getJsonObject().toBuffer());
+          }
+        });
+    }).setHandler(h -> {
+
+      JsonObject pet = new JsonObject();
+      pet.put("id", 14612);
+      pet.put("name", "Willy");
+
+      MultipartForm form = MultipartForm.create()
+        .textFileUpload("param1", "random.txt", "src/test/resources/random.txt", "text/plain")
+        .attribute("param2", pet.encode())
+        .textFileUpload("param3", "random.csv", "src/test/resources/random.txt", "text/csv")
+        .attribute("param4", "1.2,5.2,6.2")
+        .attribute("param5", "2")
+        .binaryFileUpload("param1Binary", "random-file", "src/test/resources/random-file", "text/plain");
+
+      JsonObject expected = new JsonObject()
+        .put("param2", pet)
+        .put("param4", new JsonArray().add(1.2).add(5.2).add(6.2))
+        .put("param5", 2);
+
+      testRequest(client, HttpMethod.POST, "/multipart/complex")
+        .asserts(statusCode(200))
+        .asserts(jsonBodyResponse(expected))
+        .sendMultipartForm(form, testContext, checkpoint);
+
+      testRequest(client, HttpMethod.POST, "/multipart/complex")
+        .asserts(statusCode(200))
+        .send(testContext, checkpoint);
+
+    });
+  }
+
+  @Test
+  public void testEmptyParametersNotNull(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("createPets")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          routingContext.response().setStatusCode(200).setStatusMessage( //Here it should not throw exception (issue #850)
+            "" + params.queryParametersNames().size() + params.pathParametersNames().size() +
+              params.cookieParametersNames().size() + params.headerParametersNames().size()
+          ).end();
+        });
+    }).setHandler(h -> {
+      testRequest(client, HttpMethod.POST, "/pets")
+        .asserts(statusCode(200), statusMessage("0000"))
+        .sendJson(new JsonObject().put("id", 1).put("name", "Willy"), testContext);
+    });
+  }
+
+  @Test
+  public void testQueryExpandedObjectTestOnlyAdditionalProperties(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(3);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("objectTestOnlyAdditionalProperties")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          testContext.verify(() -> {
+            assertThat(params.queryParameter("wellKnownParam").getString()).isEqualTo("hello");
+
+            JsonObject param = params.queryParameter("params").getJsonObject();
+            assertThat(param.containsKey("wellKnownParam")).isFalse();
+            assertThat(param.getInteger("param1")).isEqualTo(1);
+            assertThat(param.getInteger("param2")).isEqualTo(2);
+          });
+          routingContext.response().setStatusCode(200).end();
+        });
+    }).setHandler(h -> {
+      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=2&wellKnownParam=hello")
+        .asserts(statusCode(200))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=a&wellKnownParam=hello")
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "params", ParameterLocation.QUERY))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=2&wellKnownParam=a")
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "wellKnownParam", ParameterLocation.QUERY))
+        .send(testContext, checkpoint);
+    });
+  }
+
+  @Test
+  public void testJsonBodyWithDate(Vertx vertx, VertxTestContext testContext) {
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("jsonBodyWithDate")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          routingContext
+            .response()
+            .setStatusCode(200)
+            .setStatusMessage("OK")
+            .putHeader("Content-Type", "application/json")
+            .end(params.body().getJsonObject().encode());
+        });
+    }).setHandler(h -> {
+      JsonObject obj = new JsonObject();
+      obj.put("date", "2018-02-18");
+      obj.put("dateTime1", "2018-01-01T10:00:00.0000000000000000000000Z");
+      obj.put("dateTime2", "2018-01-01T10:00:00+10:00");
+      obj.put("dateTime3", "2018-01-01T10:00:00-10:00");
+
+      testRequest(client, HttpMethod.POST, "/jsonBodyWithDate")
+        .asserts(statusCode(200))
+        .asserts(jsonBodyResponse(obj))
+        .sendJson(obj, testContext);
+    });
+  }
+
+
+  /**
+   * Test: query_optional_form_explode_object
+   */
+  @Test
+  public void testQueryOptionalFormExplodeObject(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(2);
+    loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory
+        .operation("query_form_explode_object")
+        .handler(routingContext -> {
+          RequestParameters params = routingContext.get("parsedParameters");
+          routingContext.response()
+            .setStatusCode(200)
+            .setStatusMessage("OK")
+            .putHeader("content-type", "application/json")
+            .end(params.queryParameter("color").getJsonObject().encode());
+        });
+    }).setHandler(h -> {
+      testRequest(client, HttpMethod.GET, "/query/form/explode/object?R=100&G=200&B=150&alpha=50")
+        .asserts(statusCode(200))
+        .asserts(jsonBodyResponse(new JsonObject("{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\",\"alpha\":50}")))
+        .send(testContext, checkpoint);
+      testRequest(client, HttpMethod.GET, "/query/form/explode/object?R=100&G=200&B=150&alpha=aaa")
+        .asserts(statusCode(400))
+        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "color", ParameterLocation.QUERY))
+        .send(testContext, checkpoint);
+    });
   }
 }
