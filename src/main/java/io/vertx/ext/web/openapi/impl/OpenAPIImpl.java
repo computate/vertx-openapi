@@ -16,7 +16,7 @@ import io.vertx.ext.json.schema.*;
 import io.vertx.ext.json.schema.draft7.Draft7SchemaParser;
 import io.vertx.ext.json.schema.generic.URIUtils;
 import io.vertx.ext.json.schema.generic.ObservableFuture;
-import io.vertx.ext.web.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
 
 import java.net.URI;
@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class OpenAPILoaderImpl implements OpenAPILoader {
+public class OpenAPIImpl implements OpenAPIHolder {
 
   private final Map<URI, JsonObject> absolutePaths;
   private final HttpClient client;
@@ -47,7 +47,7 @@ public class OpenAPILoaderImpl implements OpenAPILoader {
 
   static {
     try {
-      openapiSchemaURI = OpenAPILoaderImpl.class.getResource("/openapi_3_schema.json").toURI();
+      openapiSchemaURI = OpenAPIImpl.class.getResource("/openapi_3_schema.json").toURI();
       openapiSchemaJson = new JsonObject(
           String.join("",
               Files.readAllLines(Paths.get(openapiSchemaURI))
@@ -58,7 +58,7 @@ public class OpenAPILoaderImpl implements OpenAPILoader {
     }
   }
 
-  public OpenAPILoaderImpl(HttpClient client, FileSystem fs, OpenAPILoaderOptions options) {
+  public OpenAPIImpl(HttpClient client, FileSystem fs, OpenAPILoaderOptions options) {
     absolutePaths = new ConcurrentHashMap<>();
     externalSolvingRefs = new ConcurrentHashMap<>();
     this.client = client;
@@ -70,7 +70,6 @@ public class OpenAPILoaderImpl implements OpenAPILoader {
     this.openapiSchema = parser.parse(openapiSchemaJson, openapiSchemaURI);
   }
 
-  @Override
   public Future<JsonObject> loadOpenAPI(String u) {
     URI uri = URIUtils.removeFragment(URI.create(u));
     Future<JsonObject> resolvedOpenAPIDocumentUnparsed = (URIUtils.isRemoteURI(uri)) ? solveRemoteRef(uri) : solveLocalRef(uri);

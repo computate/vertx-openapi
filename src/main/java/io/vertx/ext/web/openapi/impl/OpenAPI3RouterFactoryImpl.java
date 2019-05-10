@@ -10,7 +10,10 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.ResponseContentTypeHandler;
 import io.vertx.ext.web.impl.RouteImpl;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
+import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterFactory;
+import io.vertx.ext.web.openapi.RouterFactoryOptions;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -39,16 +42,22 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
     };
   }
 
+  private Vertx vertx;
+  private OpenAPIHolder openapi;
+  private RouterFactoryOptions options;
   private Map<String, OperationImpl> operations;
   private BodyHandler bodyHandler;
+  private SecurityHandlersStore securityHandlers;
   private List<Handler<RoutingContext>> globalHandlers;
   private Function<RoutingContext, JsonObject> extraOperationContextPayloadMapper;
 
-  SecurityHandlersStore securityHandlers;
+  public OpenAPI3RouterFactoryImpl(Vertx vertx, OpenAPIHolder spec) {
+    this.vertx = vertx;
+    this.openapi = spec;
+    this.options = new RouterFactoryOptions();
+    this.bodyHandler = BodyHandler.create();
+    this.globalHandlers = new ArrayList<>();
 
-  public OpenAPI3RouterFactoryImpl(Vertx vertx, OpenAPI spec, ResolverCache refsCache) {
-    super(vertx, spec);
-    this.refsCache = refsCache;
     this.operations = new LinkedHashMap<>();
     this.securityHandlers = new SecurityHandlersStore();
 
@@ -66,9 +75,49 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   }
 
   @Override
-  public OpenAPI3RouterFactory addSecuritySchemaScopeValidator(String securitySchemaName, String scopeName, Handler
-    handler) {
+  public RouterFactory setOptions(RouterFactoryOptions options) {
+    Objects.requireNonNull(options);
+    this.options = options;
+    return this;
+  }
+
+  @Override
+  public RouterFactoryOptions getOptions() {
+    return options;
+  }
+
+  @Override
+  public RouterFactory securityHandler(String securitySchemaName, Handler<RoutingContext> handler) {
+    Objects.requireNonNull(securitySchemaName);
+    Objects.requireNonNull(handler);
+    securityHandlers.addSecurityRequirement(securitySchemaName, handler);
+    return this;
+  }
+
+  @Override
+  public RouterFactory securityHandler(String securitySchemaName, String scopeName, Handler<RoutingContext> handler) {
+    Objects.requireNonNull(securitySchemaName);
+    Objects.requireNonNull(scopeName);
+    Objects.requireNonNull(handler);
     securityHandlers.addSecurityRequirement(securitySchemaName, scopeName, handler);
+    return this;
+  }
+
+  @Override
+  public List<Operation> operations() {
+    return this.operations.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList());
+  }
+
+  @Override
+  public Operation operation(String operationId) {
+    Objects.requireNonNull(operationId);
+    return this.operations.get(operationId);
+  }
+
+  @Override
+  public RouterFactory bodyHandler(BodyHandler bodyHandler) {
+    Objects.requireNonNull(bodyHandler);
+    this.bodyHandler = bodyHandler;
     return this;
   }
 
@@ -152,12 +201,6 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
         }
       }
     }
-    return this;
-  }
-
-  @Override
-  public OpenAPI3RouterFactory addSecurityHandler(String securitySchemaName, Handler handler) {
-    securityHandlers.addSecurityRequirement(securitySchemaName, handler);
     return this;
   }
 

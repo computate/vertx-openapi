@@ -218,10 +218,10 @@ public class OpenAPI3PathResolver {
   }
 
   private boolean hasParameterWithStyle(String style) {
-    return parameters.stream().map(this::solveParamStyle).anyMatch(s -> s.equals(style));
+    return parameters.stream().map(p -> p.getString("style", "simple")).anyMatch(s -> s.equals(style));
   }
 
   private boolean hasParameterWithStyleAndExplode(String style, boolean explode) {
-    return parameters.stream().anyMatch(p -> solveParamStyle(p).equals(style) && solveParamExplode(p) == explode);
+    return parameters.stream().anyMatch(p -> p.getString("style", "simple").equals(style) && p.getBoolean("explode", false) == explode);
   }
 }

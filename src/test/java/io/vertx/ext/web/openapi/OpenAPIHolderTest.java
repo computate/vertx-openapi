@@ -16,6 +16,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BasicAuthHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.openapi.impl.OpenAPIImpl;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -34,7 +35,7 @@ import static io.vertx.ext.web.openapi.asserts.MyAssertions.assertThat;
 
 @ExtendWith(VertxExtension.class)
 @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
-public class OpenAPILoaderTest {
+public class OpenAPIHolderTest {
 
   private HttpServer schemaServer;
 
@@ -71,7 +72,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadFromFileNoRef(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader parser = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl parser = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     parser.loadOpenAPI("yaml/valid/simple_spec.yaml").setHandler(testContext.succeeding(container -> {
       testContext.verify(() -> {
@@ -110,7 +111,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadInvalidFromFileNoRef(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader parser = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl parser = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     parser.loadOpenAPI("yaml/invalid/simple_spec.yaml").setHandler(testContext.failing(err -> {
       testContext.verify(() -> {
@@ -122,7 +123,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadFromFile(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader parser = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl parser = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     parser.loadOpenAPI("yaml/valid/inner_refs.yaml").setHandler(testContext.succeeding(openapi -> {
       testContext.verify(() -> {
@@ -180,7 +181,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadInvalidFromFile(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader parser = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl parser = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     parser.loadOpenAPI("yaml/invalid/inner_refs.yaml").setHandler(testContext.failing(err -> {
       testContext.verify(() -> {
@@ -193,7 +194,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadFromFileLocalRelativeRef(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     loader.loadOpenAPI("yaml/valid/local_refs.yaml").setHandler(testContext.succeeding(openapi -> {
       testContext.verify(() -> {
@@ -246,7 +247,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadInvalidFromFileLocalRelativeRef(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     loader.loadOpenAPI("yaml/invalid/local_refs.yaml").setHandler(testContext.failing(err -> {
       testContext.verify(() -> {
@@ -259,7 +260,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void debtsManagerTest(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     loader.loadOpenAPI("json/valid/debts_manager_api.json").setHandler(testContext.succeeding(openapi -> {
       testContext.verify(() -> {
@@ -289,7 +290,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void debtsManagerFailureTest(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     loader.loadOpenAPI("json/invalid/debts_manager_api.json").setHandler(testContext.failing(err -> {
       testContext.verify(() -> {
@@ -302,7 +303,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadFromFileLocalCircularRef(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
 
     loader.loadOpenAPI("yaml/valid/local_circular_refs.yaml").setHandler(testContext.succeeding(openapi -> {
       testContext.verify(() -> {
@@ -339,7 +340,7 @@ public class OpenAPILoaderTest {
 
   @Test
   public void loadRemoteInvalid(Vertx vertx, VertxTestContext testContext) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
     testContext.assertFailure(
         startSchemaServer(vertx, "src/test/resources/yaml/invalid", Collections.emptyList())
             .compose(v -> loader.loadOpenAPI("http://localhost:9000/local_refs.yaml"))
@@ -385,7 +386,7 @@ public class OpenAPILoaderTest {
   }
 
   private void remoteCircularTest(Vertx vertx, VertxTestContext testContext, OpenAPILoaderOptions options, List<Handler<RoutingContext>> authHandlers) {
-    OpenAPILoader loader = OpenAPILoader.create(vertx, options);
+    OpenAPIImpl loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
     testContext.assertComplete(
         startSchemaServer(vertx, "src/test/resources/yaml/valid", authHandlers)
             .compose(v -> loader.loadOpenAPI("http://localhost:9000/local_circular_refs.yaml"))

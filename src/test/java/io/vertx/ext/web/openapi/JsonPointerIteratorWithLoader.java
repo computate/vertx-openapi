@@ -4,9 +4,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.impl.JsonPointerIteratorImpl;
 
 public class JsonPointerIteratorWithLoader extends JsonPointerIteratorImpl {
-  private final OpenAPILoader loader;
+  private final OpenAPIHolder loader;
 
-  public JsonPointerIteratorWithLoader(OpenAPILoader loader) {
+  public JsonPointerIteratorWithLoader(OpenAPIHolder loader) {
     super();
     this.loader = loader;
   }

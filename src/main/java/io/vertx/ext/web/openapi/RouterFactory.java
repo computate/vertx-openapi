@@ -8,16 +8,16 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.json.schema.SchemaParser;
+import io.vertx.ext.json.schema.SchemaRouter;
 import io.vertx.ext.json.schema.ValidationException;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.openapi.impl.OpenAPILoaderImpl;
+import io.vertx.ext.web.openapi.impl.OpenAPIImpl;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 //TODO all methods docs
 
@@ -137,7 +137,11 @@ public interface RouterFactory {
    */
   RouterFactoryOptions getOptions();
 
-  JsonObject getOpenAPI();
+  OpenAPIHolder getOpenAPI();
+
+  SchemaRouter getSchemaRouter();
+
+  SchemaParser getSchemaParser();
 
   /**
    * When set, this function is called while creating the payload of {@link io.vertx.ext.web.api.service.ServiceRequest}
@@ -178,7 +182,7 @@ public interface RouterFactory {
                      String url,
                      OpenAPILoaderOptions options,
                      Handler<AsyncResult<RouterFactory>> handler) {
-    OpenAPILoader loader = new OpenAPILoaderImpl(vertx.createHttpClient(), vertx.fileSystem(), options);
+    OpenAPIHolder loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), options);
     loader.loadOpenAPI(url).setHandler(ar -> {
       if (ar.failed()) {
         if (ar.cause() instanceof ValidationException) {

@@ -3,16 +3,16 @@ package io.vertx.ext.web.openapi.asserts;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.openapi.JsonPointerIteratorWithLoader;
-import io.vertx.ext.web.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 import org.assertj.core.api.AbstractAssert;
 
 import java.net.URI;
 
-public class OpenAPILoaderAssert extends AbstractAssert<OpenAPILoaderAssert, OpenAPILoader> {
+public class OpenAPILoaderAssert extends AbstractAssert<OpenAPILoaderAssert, OpenAPIHolder> {
 
   private final JsonPointerIteratorWithLoader iterator;
 
-  public OpenAPILoaderAssert(OpenAPILoader actual) {
+  public OpenAPILoaderAssert(OpenAPIHolder actual) {
     super(actual, OpenAPILoaderAssert.class);
     iterator = new JsonPointerIteratorWithLoader(actual);
   }

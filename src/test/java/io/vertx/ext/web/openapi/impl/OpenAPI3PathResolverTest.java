@@ -3,9 +3,8 @@ package io.vertx.ext.web.openapi.impl;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.openapi.OpenAPILoader;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
-import io.vertx.ext.web.openapi.Operation;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Optional;
@@ -27,12 +25,12 @@ import static org.assertj.core.api.Assertions.*;
 @ExtendWith(VertxExtension.class)
 public class OpenAPI3PathResolverTest {
 
-  OpenAPILoader loader;
+  OpenAPIHolder loader;
   JsonObject openapi;
 
   @BeforeEach
   void setUp(Vertx vertx, VertxTestContext context) {
-    loader = OpenAPILoader.create(vertx, new OpenAPILoaderOptions());
+    loader = OpenAPIHolder.create(vertx, new OpenAPILoaderOptions());
     loader
       .loadOpenAPI("src/test/resources/specs/path_resolver_test.yaml")
       .setHandler(ar -> {
