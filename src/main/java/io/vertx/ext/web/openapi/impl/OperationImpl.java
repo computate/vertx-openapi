@@ -1,14 +1,19 @@
 package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.Handler;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class OperationImpl implements Operation {
@@ -18,35 +23,51 @@ public class OperationImpl implements Operation {
   private String path;
   private JsonObject pathModel;
   private JsonObject operationModel;
+  private JsonPointer operationPointer;
 
-  private List<JsonObject> parameters;
+  private Map<JsonPointer, JsonObject> parameters;
   private List<String> tags;
   private List<Handler<RoutingContext>> userHandlers;
   private List<Handler<RoutingContext>> userFailureHandlers;
 
   private String ebServiceAddress;
   private String ebServiceMethodName;
-  private JsonObject ebServiceDeliveryOptions;
+  private DeliveryOptions ebServiceDeliveryOptions;
 
-  protected OperationImpl(String operationId, HttpMethod method, String path, JsonObject operationModel, JsonObject pathModel) {
+  protected OperationImpl(String operationId, HttpMethod method, String path, JsonObject operationModel, JsonObject pathModel, URI specScope) {
     this.operationId = operationId;
     this.method = method;
     this.path = path;
     this.pathModel = pathModel;
     this.operationModel = operationModel;
     this.tags = operationModel.getJsonArray("tags", new JsonArray()).stream().map(Object::toString).collect(Collectors.toList());
+
+    JsonPointer pathPointer = JsonPointer.fromURI(specScope).append("paths").append(path);
+    this.operationPointer = pathPointer.copy().append(method.name().toLowerCase());
+
     // Merge parameters
-    List<JsonObject> opParams = operationModel
-      .getJsonArray("parameters", new JsonArray())
-      .stream()
-      .map(j -> (JsonObject)j)
-      .collect(Collectors.toList());
-    List<JsonObject> parentParams = pathModel
-      .getJsonArray("parameters", new JsonArray())
-      .stream()
-      .map(j -> (JsonObject)j)
-      .collect(Collectors.toList());
-    this.parameters = OpenApi3Utils.mergeParameters(opParams, parentParams);
+    this.parameters = new HashMap<>();
+
+    JsonArray operationParameters = operationModel.getJsonArray("parameters", new JsonArray());
+    JsonArray pathParameters = pathModel.getJsonArray("parameters", new JsonArray());
+
+    for (int i = 0; i < operationParameters.size(); i++) {
+      JsonObject parameterModel = operationParameters.getJsonObject(i);
+      JsonPointer parameterPointer = operationPointer.copy().append("parameters").append(i);
+      this.parameters.put(parameterPointer, parameterModel);
+    }
+
+    for (int i = 0; i < pathParameters.size(); i++) {
+      JsonObject parameterModel = pathParameters.getJsonObject(i);
+      String paramName = parameterModel.getString("name");
+      String paramIn = parameterModel.getString("in");
+      // A parameter is uniquely identified by a tuple (name, in)
+      if (this.parameters
+        .values()
+        .stream()
+        .noneMatch(j -> j.getString("in").equalsIgnoreCase(paramIn) && j.getString("name").equals(paramName)))
+        this.parameters.put(pathPointer.copy().append(i), parameterModel);
+    }
     this.userHandlers = new ArrayList<>();
     this.userFailureHandlers = new ArrayList<>();
   }
@@ -70,6 +91,12 @@ public class OperationImpl implements Operation {
   }
 
   @Override
+  public Operation routeToEventBus(String address, DeliveryOptions options) {
+    mountRouteToService(address, options);
+    return this;
+  }
+
+  @Override
   public String getOperationId() {
     return operationId;
   }
@@ -89,7 +116,11 @@ public class OperationImpl implements Operation {
     return path;
   }
 
-  protected List<JsonObject> getParameters() {
+  protected JsonPointer getPointer() {
+    return this.operationPointer.copy();
+  }
+
+  protected Map<JsonPointer, JsonObject> getParameters() {
     return parameters;
   }
 
@@ -125,7 +156,13 @@ public class OperationImpl implements Operation {
     this.ebServiceMethodName = OpenApi3Utils.sanitizeOperationId(methodName);
   }
 
-  protected void mountRouteToService(String address, String methodName, JsonObject deliveryOptions) {
+  protected void mountRouteToService(String address, DeliveryOptions deliveryOptions) {
+    this.ebServiceAddress = address;
+    this.ebServiceMethodName = OpenApi3Utils.sanitizeOperationId(operationId);
+    this.ebServiceDeliveryOptions = deliveryOptions;
+  }
+
+  protected void mountRouteToService(String address, String methodName, DeliveryOptions deliveryOptions) {
     this.ebServiceAddress = address;
     this.ebServiceMethodName = OpenApi3Utils.sanitizeOperationId(methodName);
     this.ebServiceDeliveryOptions = deliveryOptions;
@@ -143,7 +180,7 @@ public class OperationImpl implements Operation {
     return ebServiceMethodName;
   }
 
-  protected JsonObject getEbServiceDeliveryOptions() {
+  protected DeliveryOptions getEbServiceDeliveryOptions() {
     return ebServiceDeliveryOptions;
   }
 }

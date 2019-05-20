@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.openapi.impl.OpenApi3Utils;
 import io.vertx.ext.web.openapi.service.*;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.serviceproxy.ServiceBinder;
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Francesco Guardiani @slinkydeveloper
  */
 @SuppressWarnings("unchecked")
+@Timeout(500)
 public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTest {
 
   private final RouterFactoryOptions HANDLERS_TESTS_OPTIONS = new RouterFactoryOptions()

@@ -2,22 +2,29 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.pointer.JsonPointer;
+import io.vertx.ext.json.schema.SchemaParser;
+import io.vertx.ext.json.schema.SchemaParserOptions;
+import io.vertx.ext.json.schema.SchemaRouter;
+import io.vertx.ext.json.schema.openapi3.OpenAPI3SchemaParser;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.api.service.RouteToEBServiceHandler;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.ResponseContentTypeHandler;
 import io.vertx.ext.web.impl.RouteImpl;
-import io.vertx.ext.web.openapi.OpenAPIHolder;
-import io.vertx.ext.web.openapi.Operation;
-import io.vertx.ext.web.openapi.RouterFactory;
-import io.vertx.ext.web.openapi.RouterFactoryOptions;
+import io.vertx.ext.web.openapi.*;
+import io.vertx.ext.web.validation.impl.ValidationHandlerImpl;
 
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -34,7 +41,7 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   private static Handler<RoutingContext> generateNotAllowedHandler(List<HttpMethod> allowedMethods) {
     return rc -> {
       rc.addHeadersEndHandler(v ->
-          rc.response().headers().add("Allow", Strings.join(", ",
+          rc.response().headers().add("Allow", String.join(", ",
             allowedMethods.stream().map(HttpMethod::toString).collect(Collectors.toList())
           ))
         );
@@ -49,29 +56,56 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   private BodyHandler bodyHandler;
   private SecurityHandlersStore securityHandlers;
   private List<Handler<RoutingContext>> globalHandlers;
-  private Function<RoutingContext, JsonObject> extraOperationContextPayloadMapper;
+  private Function<RoutingContext, JsonObject> serviceExtraPayloadMapper;
+  private SchemaRouter schemaRouter;
+  private OpenAPI3SchemaParser schemaParser;
+  private OpenAPI3ValidationHandlerGenerator validationHandlerGenerator;
 
-  public OpenAPI3RouterFactoryImpl(Vertx vertx, OpenAPIHolder spec) {
+  public OpenAPI3RouterFactoryImpl(Vertx vertx, OpenAPIHolderImpl spec, OpenAPILoaderOptions options) {
     this.vertx = vertx;
     this.openapi = spec;
     this.options = new RouterFactoryOptions();
     this.bodyHandler = BodyHandler.create();
     this.globalHandlers = new ArrayList<>();
+    this.schemaRouter = SchemaRouter.create(vertx, options.toSchemaRouterOptions());
+    this.schemaParser = OpenAPI3SchemaParser.create(new SchemaParserOptions(), schemaRouter);
+    this.validationHandlerGenerator = new OpenAPI3ValidationHandlerGenerator(openapi, schemaRouter, schemaParser);
+
+    // Load default generators
+    this.validationHandlerGenerator
+      .addParameterProcessorGenerator(new DeepObjectParameterProcessorGenerator(schemaParser))
+      .addParameterProcessorGenerator(new ExplodedArrayParameterProcessorGenerator(schemaParser))
+      .addParameterProcessorGenerator(new ExplodedMatrixArrayParameterProcessorGenerator(schemaParser))
+      .addParameterProcessorGenerator(new ExplodedObjectParameterProcessorGenerator(schemaParser))
+      .addParameterProcessorGenerator(new ExplodedSimpleObjectParameterProcessorGenerator(schemaParser))
+      .addParameterProcessorGenerator(new JsonParameterProcessorGenerator(schemaParser))
+      .addParameterProcessorGenerator(new DefaultParameterProcessorGenerator(schemaParser));
+
+    this.validationHandlerGenerator
+      .addBodyProcessorGenerator(new JsonBodyProcessorGenerator(schemaParser))
+      .addBodyProcessorGenerator(new UrlEncodedFormBodyProcessorGenerator(schemaParser))
+      .addBodyProcessorGenerator(new MultipartFormBodyProcessorGenerator(schemaParser));
 
     this.operations = new LinkedHashMap<>();
     this.securityHandlers = new SecurityHandlersStore();
 
-    /* --- Initialization of all arrays and maps --- */
-    for (Map.Entry<String, ? extends PathItem> pathEntry : spec.getPaths().entrySet()) {
-      for (Map.Entry<PathItem.HttpMethod, ? extends Operation> opEntry : pathEntry.getValue().readOperationsMap().entrySet()) {
-        this.operations.put(opEntry.getValue().getOperationId(), new OperationImpl(
-          HttpMethod.valueOf(opEntry.getKey().name()),
-          pathEntry.getKey(),
-          opEntry.getValue(),
-          pathEntry.getValue()
-        ));
-      }
-    }
+    /* --- Initialization of operations --- */
+    spec.getOpenAPIResolved().forEach(pathEntry -> {
+      ((JsonObject)pathEntry.getValue()).forEach(opEntry -> {
+        JsonObject operationModel = (JsonObject) opEntry.getValue();
+        this.operations.put(
+          operationModel.getString("operationId"),
+          new OperationImpl(
+            operationModel.getString("operationId"),
+            HttpMethod.valueOf(opEntry.getKey()),
+            pathEntry.getKey(),
+            operationModel,
+            (JsonObject) pathEntry.getValue(),
+            spec.getInitialScope()
+          )
+        );
+      });
+    });
   }
 
   @Override
@@ -84,6 +118,27 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   @Override
   public RouterFactoryOptions getOptions() {
     return options;
+  }
+
+  @Override
+  public OpenAPIHolder getOpenAPI() {
+    return openapi;
+  }
+
+  @Override
+  public SchemaRouter getSchemaRouter() {
+    return schemaRouter;
+  }
+
+  @Override
+  public SchemaParser getSchemaParser() {
+    return schemaParser;
+  }
+
+  @Override
+  public RouterFactory serviceExtraPayloadMapper(Function<RoutingContext, JsonObject> serviceExtraPayloadMapper) {
+    this.serviceExtraPayloadMapper = serviceExtraPayloadMapper;
+    return this;
   }
 
   @Override
@@ -122,43 +177,20 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   }
 
   @Override
-  public OpenAPI3RouterFactory addHandlerByOperationId(String operationId, Handler<RoutingContext> handler) {
-    if (handler != null) {
-      OperationImpl op = operations.get(operationId);
-      if (op == null) throw RouterFactoryException.createOperationIdNotFoundException(operationId);
-      op.addUserHandler(handler);
-    }
-    return this;
+  public RouterFactory rootHandler(Handler<RoutingContext> rootHandler) {
+    this.globalHandlers.add(rootHandler);
+    return null;
   }
 
   @Override
-  public OpenAPI3RouterFactory addFailureHandlerByOperationId(String operationId, Handler<RoutingContext> failureHandler) {
-    if (failureHandler != null) {
-      OperationImpl op = operations.get(operationId);
-      if (op == null) throw RouterFactoryException.createOperationIdNotFoundException(operationId);
-      op.addUserFailureHandler(failureHandler);
-    }
-    return this;
-  }
-
-  @Override
-  public OpenAPI3RouterFactory mountServiceFromTag(String tag, String address) {
-    for (Map.Entry<String, OperationImpl> op : operations.entrySet()) {
-      if (op.getValue().hasTag(tag))
-        op.getValue().mountRouteToService(address);
-    }
-    return this;
-  }
-
-  @Override
-  public OpenAPI3RouterFactory mountServiceInterface(Class interfaceClass, String address) {
+  public RouterFactory mountServiceInterface(Class interfaceClass, String address) {
     for (Method m : interfaceClass.getMethods()) {
       if (OpenApi3Utils.serviceProxyMethodIsCompatibleHandler(m)) {
         String methodName = m.getName();
         OperationImpl op = Optional
           .ofNullable(this.operations.get(methodName))
           .orElseGet(() ->
-            this.operations.entrySet().stream().filter(e -> OpenApi3Utils.sanitizeOperationId(e.getKey()).equals(methodName)).map(Map.Entry::getValue).findFirst().orElseGet(() -> null)
+            this.operations.entrySet().stream().filter(e -> OpenApi3Utils.sanitizeOperationId(e.getKey()).equals(methodName)).map(Map.Entry::getValue).findFirst().orElse(null)
           );
         if (op != null) {
           op.mountRouteToService(address, methodName);
@@ -169,35 +201,27 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   }
 
   @Override
-  public OpenAPI3RouterFactory mountOperationToEventBus(String operationId, String address) {
-    OperationImpl op = operations.get(operationId);
-    if (op == null) throw RouterFactoryException.createOperationIdNotFoundException(operationId);
-    op.mountRouteToService(address, operationId);
-    return this;
-  }
-
-  @Override
-  public OpenAPI3RouterFactory mountServicesFromExtensions() {
+  public RouterFactory mountServicesFromExtensions() {
     for (Map.Entry<String, OperationImpl> opEntry : operations.entrySet()) {
       OperationImpl operation = opEntry.getValue();
-      Object extensionVal = OpenApi3Utils.getAndMergeServiceExtension(OPENAPI_EXTENSION, OPENAPI_EXTENSION_ADDRESS, OPENAPI_EXTENSION_METHOD_NAME, operation.pathModel, operation.operationModel);
+      Object extensionVal = OpenApi3Utils.getAndMergeServiceExtension(OPENAPI_EXTENSION, OPENAPI_EXTENSION_ADDRESS, OPENAPI_EXTENSION_METHOD_NAME, operation.getPathModel(), operation.getOperationModel());
 
       if (extensionVal != null) {
         if (extensionVal instanceof String) {
           operation.mountRouteToService((String) extensionVal, opEntry.getKey());
-        } else if (extensionVal instanceof Map) {
-          JsonObject extensionMap = new JsonObject((Map<String, Object>) extensionVal);
+        } else if (extensionVal instanceof JsonObject) {
+          JsonObject extensionMap = (JsonObject) extensionVal;
           String address = extensionMap.getString(OPENAPI_EXTENSION_ADDRESS);
           String methodName = extensionMap.getString(OPENAPI_EXTENSION_METHOD_NAME);
           JsonObject sanitizedMap = OpenApi3Utils.sanitizeDeliveryOptionsExtension(extensionMap);
           if (address == null)
-            throw RouterFactoryException.createWrongExtension("Extension " + OPENAPI_EXTENSION + " must define " + OPENAPI_EXTENSION_ADDRESS);
+            throw RouterFactoryException.createWrongExtension("Extension " + OPENAPI_EXTENSION + " must define " + OPENAPI_EXTENSION_ADDRESS); //TODO specify where
           if (methodName == null)
             operation.mountRouteToService(address, opEntry.getKey());
           else
-            operation.mountRouteToService(address, methodName, sanitizedMap);
+            operation.mountRouteToService(address, methodName, new DeliveryOptions(sanitizedMap));
         } else {
-          throw RouterFactoryException.createWrongExtension("Extension " + OPENAPI_EXTENSION + " must be or string or a JsonObject");
+          throw RouterFactoryException.createWrongExtension("Extension " + OPENAPI_EXTENSION + " must be or string or a JsonObject"); //TODO specify where
         }
       }
     }
@@ -205,18 +229,15 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
   }
 
   @Override
-  public Router getRouter() {
+  public Router createRouter() {
     Router router = Router.router(vertx);
     Route globalRoute = router.route();
-    globalRoute.handler(this.getBodyHandler());
+    globalRoute.handler(bodyHandler);
 
-    List<Handler<RoutingContext>> globalHandlers = this.getGlobalHandlers();
-    for (Handler<RoutingContext> globalHandler: globalHandlers) {
-      globalRoute.handler(globalHandler);
-    }
+    globalHandlers.forEach(globalRoute::handler);
 
     List<Handler<RoutingContext>> globalSecurityHandlers = securityHandlers
-      .solveSecurityHandlers(spec.getSecurity(), this.getOptions().isRequireSecurityHandlers());
+      .solveSecurityHandlers(openapi.getOpenAPIResolved().getJsonArray("security", new JsonArray()), this.getOptions().isRequireSecurityHandlers());
     for (OperationImpl operation : operations.values()) {
       // If user don't want 501 handlers and the operation is not configured, skip it
       if (!options.isMountNotImplementedHandler() && !operation.isConfigured())
@@ -228,18 +249,18 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
       // Resolve security handlers
       // As https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#fixed-fields-8 says:
       // Operation specific security requirement overrides global security requirement, even if local security requirement is an empty array
-      if (operation.getOperationModel().getSecurity() != null) {
-        handlersToLoad.addAll(securityHandlers.solveSecurityHandlers(
-          operation.getOperationModel().getSecurity(),
-          this.getOptions().isRequireSecurityHandlers()
-        ));
-      } else {
-        handlersToLoad.addAll(globalSecurityHandlers);
-      }
+//TODO still missing stuff in vertx web
+//      if (operation.getOperationModel().getSecurity() != null) {
+//        handlersToLoad.addAll(securityHandlers.solveSecurityHandlers(
+//          operation.getOperationModel().getSecurity(),
+//          this.getOptions().isRequireSecurityHandlers()
+//        ));
+//      } else {
+//        handlersToLoad.addAll(globalSecurityHandlers);
+//      }
 
       // Generate ValidationHandler
-      OpenAPI3RequestValidationHandlerImpl validationHandler = new OpenAPI3RequestValidationHandlerImpl(operation
-        .getOperationModel(), operation.getParameters(), this.spec, refsCache);
+      ValidationHandlerImpl validationHandler = validationHandlerGenerator.create(operation);
       handlersToLoad.add(validationHandler);
 
       // Check if path is set by user
@@ -247,29 +268,28 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
         handlersToLoad.addAll(operation.getUserHandlers());
         failureHandlersToLoad.addAll(operation.getUserFailureHandlers());
         if (operation.mustMountRouteToService()) {
-          handlersToLoad.add(
+          RouteToEBServiceHandler routeToEBServiceHandler =
             (operation.getEbServiceDeliveryOptions() != null) ? RouteToEBServiceHandler.build(
               vertx.eventBus(),
               operation.getEbServiceAddress(),
               operation.getEbServiceMethodName(),
-              operation.getEbServiceDeliveryOptions(),
-              this.getExtraOperationContextPayloadMapper()
+              operation.getEbServiceDeliveryOptions()
             ) : RouteToEBServiceHandler.build(
               vertx.eventBus(),
               operation.getEbServiceAddress(),
-              operation.getEbServiceMethodName(),
-              this.getExtraOperationContextPayloadMapper()
-            )
-          );
+              operation.getEbServiceMethodName()
+            );
+          routeToEBServiceHandler.extraPayloadMapper(serviceExtraPayloadMapper);
+          handlersToLoad.add(routeToEBServiceHandler);
         }
       } else {
         // Check if not implemented or method not allowed
         List<HttpMethod> configuredMethodsForThisPath = operations
           .values()
           .stream()
-          .filter(ov -> operation.path.equals(ov.path))
+          .filter(ov -> operation.getOpenAPIPath().equals(ov.getOpenAPIPath()))
           .filter(OperationImpl::isConfigured)
-          .map(OperationImpl::getMethod)
+          .map(OperationImpl::getHttpMethod)
           .collect(Collectors.toList());
 
         if (!configuredMethodsForThisPath.isEmpty())
@@ -279,28 +299,28 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
       }
 
       // Now add all handlers to route
-      OpenAPI3PathResolver pathResolver = new OpenAPI3PathResolver(operation.getPath(), operation.getParameters());
+      OpenAPI3PathResolver pathResolver = new OpenAPI3PathResolver(operation.getOpenAPIPath(), new ArrayList<>(operation.getParameters().values()));
       Route route = pathResolver
         .solve() // If this optional is empty, this route doesn't need regex
-        .map(solvedRegex -> router.routeWithRegex(operation.getMethod(), solvedRegex.toString()))
-        .orElseGet(() -> router.route(operation.getMethod(), operation.getPath()));
+        .map(solvedRegex -> router.routeWithRegex(operation.getHttpMethod(), solvedRegex.toString()))
+        .orElseGet(() -> router.route(operation.getHttpMethod(), operation.getOpenAPIPath()));
 
       String exposeConfigurationKey = this.getOptions().getOperationModelKey();
       if (exposeConfigurationKey != null)
         route.handler(context -> context.put(exposeConfigurationKey, operation.getOperationModel()).next());
 
       // Set produces/consumes
-      Set<String> consumes = new HashSet<>();
-      Set<String> produces = new HashSet<>();
-      if (operation.getOperationModel().getRequestBody() != null &&
-        operation.getOperationModel().getRequestBody().getContent() != null)
-        consumes.addAll(operation.getOperationModel().getRequestBody().getContent().keySet());
+      Set<String> consumes = ((JsonObject) JsonPointer.from("/requestBody/content")
+        .queryJsonOrDefault(operation.getOperationModel(), new JsonObject()))
+        .fieldNames();
 
-
-      if (operation.getOperationModel().getResponses() != null)
-        for (ApiResponse response : operation.getOperationModel().getResponses().values())
-          if (response.getContent() != null)
-            produces.addAll(response.getContent().keySet());
+      Set<String> produces = operation.getOperationModel()
+        .getJsonObject("responses", new JsonObject())
+        .stream()
+        .map(Map.Entry::getValue)
+        .map(j -> (JsonObject)j)
+        .flatMap(j -> j.getJsonObject("content", new JsonObject()).fieldNames().stream())
+        .collect(Collectors.toSet());
 
       for (String ct : consumes)
         route.consumes(ct);
@@ -320,9 +340,6 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
       for (Handler failureHandler : failureHandlersToLoad)
         route.failureHandler(failureHandler);
     }
-    // Check validation failure handler
-    if (this.options.isMountValidationFailureHandler()) router.errorHandler(400, this.getValidationFailureHandler());
-    if (this.options.isMountNotImplementedHandler()) router.errorHandler(501, this.getNotImplementedFailureHandler());
     return router;
   }
 

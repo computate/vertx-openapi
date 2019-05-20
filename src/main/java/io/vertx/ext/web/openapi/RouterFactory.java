@@ -14,7 +14,7 @@ import io.vertx.ext.json.schema.ValidationException;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.openapi.impl.OpenAPIImpl;
+import io.vertx.ext.web.openapi.impl.OpenAPIHolderImpl;
 
 import java.util.List;
 import java.util.function.Function;
@@ -58,10 +58,8 @@ import java.util.function.Function;
 @VertxGen
 public interface RouterFactory {
 
-  @Fluent
   Operation operation(String operationId);
 
-  @Fluent
   List<Operation> operations();
 
   /**
@@ -76,11 +74,11 @@ public interface RouterFactory {
    * Add global handler to be applied prior to {@link Router} being generated. <br/>
    * Please note that you should not add a body handler inside that list. If you want to modify the body handler, please use {@link RouterFactory#bodyHandler(BodyHandler)}
    *
-   * @param globalHandler
+   * @param rootHandler
    * @return this object
    */
   @Fluent
-  RouterFactory rootHandler(Handler<RoutingContext> globalHandler);
+  RouterFactory rootHandler(Handler<RoutingContext> rootHandler);
 
   /**
    * Mount to paths that have to follow a security schema a security handler
@@ -139,8 +137,10 @@ public interface RouterFactory {
 
   OpenAPIHolder getOpenAPI();
 
+  @GenIgnore //TODO
   SchemaRouter getSchemaRouter();
 
+  @GenIgnore //TODO
   SchemaParser getSchemaParser();
 
   /**
@@ -182,7 +182,7 @@ public interface RouterFactory {
                      String url,
                      OpenAPILoaderOptions options,
                      Handler<AsyncResult<RouterFactory>> handler) {
-    OpenAPIHolder loader = new OpenAPIImpl(vertx.createHttpClient(), vertx.fileSystem(), options);
+    OpenAPIHolderImpl loader = new OpenAPIHolderImpl(vertx.createHttpClient(), vertx.fileSystem(), options);
     loader.loadOpenAPI(url).setHandler(ar -> {
       if (ar.failed()) {
         if (ar.cause() instanceof ValidationException) {

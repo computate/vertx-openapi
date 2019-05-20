@@ -11,6 +11,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
+import io.vertx.ext.web.openapi.RouterFactory;
+import io.vertx.ext.web.openapi.RouterFactoryOptions;
 import io.vertx.ext.web.openapi.impl.OpenAPI3RouterFactoryAdapter;
 
 import java.util.Collections;
@@ -101,7 +104,7 @@ public interface OpenAPI3RouterFactory {
 
   /**
    * Add global handler to be applied prior to {@link io.vertx.ext.web.Router} being generated. <br/>
-   * Please note that you should not add a body handler inside that list. If you want to modify the body handler, please use {@link RouterFactory#setBodyHandler(BodyHandler)}
+   * Please note that you should not add a body handler inside that list. If you want to modify the body handler, please use {@link OpenAPI3RouterFactory#setBodyHandler(BodyHandler)}
    *
    * @param globalHandler
    * @return this object
@@ -110,7 +113,7 @@ public interface OpenAPI3RouterFactory {
   OpenAPI3RouterFactory addGlobalHandler(Handler<RoutingContext> globalHandler);
 
   /**
-   * When set, this function is called while creating the payload of {@link io.vertx.ext.web.api.OperationRequest}
+   * When set, this function is called while creating the payload of {@link io.vertx.ext.web.api.service.ServiceRequest}
    * @param extraOperationContextPayloadMapper
    * @return
    */

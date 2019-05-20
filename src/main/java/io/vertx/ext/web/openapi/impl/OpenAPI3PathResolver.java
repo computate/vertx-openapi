@@ -1,9 +1,6 @@
 package io.vertx.ext.web.openapi.impl;
 
-import io.swagger.v3.oas.models.parameters.Parameter;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.api.contract.RouterFactoryException;
 import io.vertx.ext.web.openapi.RouterFactoryException;
 
 import java.util.*;
@@ -75,8 +72,8 @@ public class OpenAPI3PathResolver {
           JsonObject parameter = parameterOptional.get();
           String style = parameter.getString("style", "simple");
           boolean explode = parameter.getBoolean("explode", false);
-          boolean isObject = OpenApi3Utils.isParameterObjectOrAllOfType(parameter);
-          boolean isArray = OpenApi3Utils.isParameterArrayType(parameter);
+          boolean isObject = OpenApi3Utils.isSchemaObjectOrCombinators(parameter.getJsonObject("schema", new JsonObject()));
+          boolean isArray = OpenApi3Utils.isSchemaArray(parameter.getJsonObject("schema", new JsonObject()));
 
           String groupName = "p" + i;
 
@@ -114,8 +111,8 @@ public class OpenAPI3PathResolver {
             mappedGroups.put(groupName, paramName);
           } else if (style.equals("label")) {
             if (isObject && explode) {
-              Map<String, OpenApi3Utils.ObjectField> properties = OpenApi3Utils.solveObjectParameters(parameter.getSchema());
-              for (Map.Entry<String, OpenApi3Utils.ObjectField> entry : properties.entrySet()) {
+              Map<String, JsonObject> properties = OpenApi3Utils.solveObjectParameters(parameter.getJsonObject("schema"));
+              for (Map.Entry<String, JsonObject> entry : properties.entrySet()) {
                 groupName = "p" + i;
                 regex.append(
                   RegexBuilder.create().optionalGroup(
@@ -145,8 +142,8 @@ public class OpenAPI3PathResolver {
             }
           } else if (style.equals("matrix")) {
             if (isObject && explode) {
-              Map<String, OpenApi3Utils.ObjectField> properties = OpenApi3Utils.solveObjectParameters(parameter.getSchema());
-              for (Map.Entry<String, OpenApi3Utils.ObjectField> entry : properties.entrySet()) {
+              Map<String, JsonObject> properties = OpenApi3Utils.solveObjectParameters(parameter.getJsonObject("schema"));
+              for (Map.Entry<String, JsonObject> entry : properties.entrySet()) {
                 groupName = "p" + i;
                 regex.append(
                   RegexBuilder.create().optionalGroup(

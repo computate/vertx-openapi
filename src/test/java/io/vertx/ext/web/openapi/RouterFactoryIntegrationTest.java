@@ -17,6 +17,7 @@ import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.multipart.MultipartForm;
 import io.vertx.ext.web.validation.*;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 @SuppressWarnings("unchecked")
 @ExtendWith(VertxExtension.class)
+@Timeout(500)
 public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
   public static final String VALIDATION_SPEC = "src/test/resources/specs/validation_test.yaml";

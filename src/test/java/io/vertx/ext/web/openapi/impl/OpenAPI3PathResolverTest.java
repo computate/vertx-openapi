@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,15 +23,16 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 
+@Timeout(200)
 @ExtendWith(VertxExtension.class)
 public class OpenAPI3PathResolverTest {
 
-  OpenAPIHolder loader;
+  OpenAPIHolderImpl loader;
   JsonObject openapi;
 
   @BeforeEach
   void setUp(Vertx vertx, VertxTestContext context) {
-    loader = OpenAPIHolder.create(vertx, new OpenAPILoaderOptions());
+    loader = new OpenAPIHolderImpl(vertx.createHttpClient(), vertx.fileSystem(), new OpenAPILoaderOptions());
     loader
       .loadOpenAPI("src/test/resources/specs/path_resolver_test.yaml")
       .setHandler(ar -> {

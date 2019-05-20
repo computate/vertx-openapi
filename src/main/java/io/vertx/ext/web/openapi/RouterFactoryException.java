@@ -1,6 +1,8 @@
 package io.vertx.ext.web.openapi;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.pointer.JsonPointer;
 
 /**
  * Main class for router factory exceptions
@@ -36,7 +38,11 @@ public class RouterFactoryException extends RuntimeException {
     /**
      * You specified an interface not annotated with {@link io.vertx.ext.web.api.service.WebApiServiceGen} while calling {@link RouterFactory#mountServiceInterface(Class, String)}
      */
-    WRONG_INTERFACE
+    WRONG_INTERFACE,
+    /**
+     * You specified a wrong service extension
+     */
+    WRONG_SERVICE_EXTENSION
   }
 
   private ErrorType type;
@@ -50,13 +56,29 @@ public class RouterFactoryException extends RuntimeException {
     return type;
   }
 
-  public static RouterFactoryException createPathNotFoundException(String pathName) {
-    return new RouterFactoryException(pathName + " not found inside specification", ErrorType.PATH_NOT_FOUND);
+//  public static RouterFactoryException createPathNotFoundException(String pathName) {
+//    return new RouterFactoryException(pathName + " not found inside specification", ErrorType.PATH_NOT_FOUND);
+//  }
+//
+//  public static RouterFactoryException createOperationIdNotFoundException(String operationId) {
+//    return new RouterFactoryException(operationId + " not found inside specification", ErrorType
+//      .OPERATION_ID_NOT_FOUND);
+//  }
+
+  public static RouterFactoryException cannotFindParameterProcessorGenerator(JsonPointer pointer, JsonObject parameter) {
+    return new RouterFactoryException(
+      String.format("Cannot find a ParameterProcessorGenerator for %s: %s", pointer.toString(), parameter.encode()),
+      ErrorType.UNSUPPORTED_SPEC,
+      null
+    );
   }
 
-  public static RouterFactoryException createOperationIdNotFoundException(String operationId) {
-    return new RouterFactoryException(operationId + " not found inside specification", ErrorType
-      .OPERATION_ID_NOT_FOUND);
+  public static RouterFactoryException createBodyNotSupported(JsonPointer pointer) {
+    return new RouterFactoryException(
+      String.format("Cannot find a BodyProcessorGenerator for %s", pointer.toString()),
+      ErrorType.UNSUPPORTED_SPEC,
+      null
+    );
   }
 
   public static RouterFactoryException createInvalidSpecException(Throwable cause) {
@@ -69,20 +91,24 @@ public class RouterFactoryException extends RuntimeException {
 
   public static RouterFactoryException createMissingSecurityHandler(String securitySchema) {
     return new RouterFactoryException("Missing handler for security requirement: " + securitySchema, ErrorType
-      .MISSING_SECURITY_HANDLER);
+      .MISSING_SECURITY_HANDLER, null);
   }
 
   public static RouterFactoryException createMissingSecurityHandler(String securitySchema, String securityScope) {
     return new RouterFactoryException("Missing handler for security requirement: " + securitySchema + ":" +
-      securityScope, ErrorType.MISSING_SECURITY_HANDLER);
+      securityScope, ErrorType.MISSING_SECURITY_HANDLER, null);
   }
 
-  public static RouterFactoryException createWrongInterface(Class i) {
-    return new RouterFactoryException("Interface " + i.getName() + " is not annotated with @WebApiServiceProxy", ErrorType.WRONG_INTERFACE);
-  }
+//  public static RouterFactoryException createWrongInterface(Class i) {
+//    return new RouterFactoryException("Interface " + i.getName() + " is not annotated with @WebApiServiceProxy", ErrorType.WRONG_INTERFACE);
+//  }
 
   public static RouterFactoryException createUnsupportedSpecFeature(String message) {
     return new RouterFactoryException(message, ErrorType.UNSUPPORTED_SPEC, null);
+  }
+
+  public static RouterFactoryException createWrongExtension(String message) {
+    return new RouterFactoryException(message, ErrorType.WRONG_SERVICE_EXTENSION, null);
   }
 
 }

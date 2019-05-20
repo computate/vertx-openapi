@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class OpenAPIImpl implements OpenAPIHolder {
+public class OpenAPIHolderImpl implements OpenAPIHolder {
 
   private final Map<URI, JsonObject> absolutePaths;
   private final HttpClient client;
@@ -47,7 +47,7 @@ public class OpenAPIImpl implements OpenAPIHolder {
 
   static {
     try {
-      openapiSchemaURI = OpenAPIImpl.class.getResource("/openapi_3_schema.json").toURI();
+      openapiSchemaURI = OpenAPIHolderImpl.class.getResource("/openapi_3_schema.json").toURI();
       openapiSchemaJson = new JsonObject(
           String.join("",
               Files.readAllLines(Paths.get(openapiSchemaURI))
@@ -58,7 +58,7 @@ public class OpenAPIImpl implements OpenAPIHolder {
     }
   }
 
-  public OpenAPIImpl(HttpClient client, FileSystem fs, OpenAPILoaderOptions options) {
+  public OpenAPIHolderImpl(HttpClient client, FileSystem fs, OpenAPILoaderOptions options) {
     absolutePaths = new ConcurrentHashMap<>();
     externalSolvingRefs = new ConcurrentHashMap<>();
     this.client = client;
@@ -83,7 +83,7 @@ public class OpenAPIImpl implements OpenAPIHolder {
         })
         .compose(openapi -> {
           JsonObject openapiCopy = openapi.copy();
-          deepSubstituteForValidation(openapiCopy, JsonPointer.fromURI(initialScope));
+          deepSubstituteForValidation(openapiCopy, JsonPointer.fromURI(initialScope), new ArrayList<>());
           openapiRootFlattened = openapiCopy;
           return openapiSchema.validateAsync(openapiCopy).map(openapi);
         });
@@ -113,6 +113,10 @@ public class OpenAPIImpl implements OpenAPIHolder {
   @Override
   public JsonObject getOpenAPIResolved() {
     return openapiRootFlattened;
+  }
+
+  protected URI getInitialScope() {
+    return initialScope;
   }
 
   private Future<Void> walkAndSolve(JsonObject obj, URI scope) {
@@ -152,23 +156,24 @@ public class OpenAPIImpl implements OpenAPIHolder {
     }
   }
 
-  private void deepSubstituteForValidation(Object obj, JsonPointer scope) {
+  private void deepSubstituteForValidation(Object obj, JsonPointer scope, List<JsonPointer> solvedPointersInThisCallTree) {
+    solvedPointersInThisCallTree.add(scope);
     if (obj instanceof JsonObject) {
       JsonObject jsonObject = (JsonObject) obj;
       if (jsonObject.containsKey("$ref")) {
         JsonPointer pointer = JsonPointer.fromURI(URI.create(jsonObject.getString("$ref")));
-        if (!pointer.isParent(scope)) { // Circular refs hell!
+        if (!pointer.isParent(scope) && !solvedPointersInThisCallTree.contains(pointer)) { // Circular refs hell!
           JsonObject resolved = solveIfNeeded(getCached(pointer)).copy();
           jsonObject.remove("$ref");
           jsonObject.mergeIn(resolved);
           jsonObject.put("x-$ref", pointer.toURI().toString());
-          deepSubstituteForValidation(jsonObject, pointer);
+          deepSubstituteForValidation(jsonObject, pointer, solvedPointersInThisCallTree);
         }
       } else
-        for (String key : jsonObject.fieldNames()) deepSubstituteForValidation(jsonObject.getValue(key), scope.copy().append(key));
+        for (String key : jsonObject.fieldNames()) deepSubstituteForValidation(jsonObject.getValue(key), scope.copy().append(key), solvedPointersInThisCallTree);
     }
     if (obj instanceof JsonArray) {
-      for (int i = 0; i < ((JsonArray)obj).size(); i++) deepSubstituteForValidation(((JsonArray)obj).getValue(i), scope.copy().append(Integer.toString(i)));
+      for (int i = 0; i < ((JsonArray)obj).size(); i++) deepSubstituteForValidation(((JsonArray)obj).getValue(i), scope.copy().append(Integer.toString(i)), solvedPointersInThisCallTree);
     }
   }
 

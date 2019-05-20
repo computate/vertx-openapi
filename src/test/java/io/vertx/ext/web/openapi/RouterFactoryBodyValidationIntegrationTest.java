@@ -18,6 +18,7 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.testutils.ValidationTestUtils;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,9 +35,10 @@ import static io.vertx.ext.web.validation.testutils.TestRequest.*;
  */
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("unchecked")
+@Timeout(500)
 public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactoryTest {
 
-  final String OAS_PATH = "./src/test/resources/specs/schemas_test_spec.yaml";
+  final String OAS_PATH = "specs/schemas_test_spec.yaml";
 
   final Handler<RoutingContext> handler = routingContext -> {
     RequestParameter body = ((RequestParameters)routingContext.get("parsedParameters")).body();

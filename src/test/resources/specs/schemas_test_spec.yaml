@@ -52,7 +52,7 @@ paths:
           application/json:
             schema:
               allOf:
-                - $ref: '#/paths/~1test1/get/requestBody/content/application~1json/schema'
+                - $ref: '#/paths/~1test1/post/requestBody/content/application~1json/schema'
                 - $ref: '#/components/schemas/Citizen'
   /test5:
     post:
@@ -109,11 +109,11 @@ paths:
                 value:
                   type: string
                 parent:
-                  $ref: '#/paths/~1test8/get/requestBody/content/application~1json/schema'
+                  $ref: '#/paths/~1test8/post/requestBody/content/application~1json/schema'
                 children:
                   type: array
                   items:
-                    $ref: '#/paths/~1test8/get/requestBody/content/application~1json/schema' # Self refs!
+                    $ref: '#/paths/~1test8/post/requestBody/content/application~1json/schema' # Self refs!
               additionalProperties: {}
   /test9:
     post:
@@ -131,11 +131,11 @@ paths:
                 - type: object
                   properties:
                     parent_card:
-                      $ref: '#/paths/~1test9/get/requestBody/content/application~1json/schema'
+                      $ref: '#/paths/~1test9/post/requestBody/content/application~1json/schema'
                     children_cards:
                       type: array
                       items:
-                        $ref: '#/paths/~1test9/get/requestBody/content/application~1json/schema'
+                        $ref: '#/paths/~1test9/post/requestBody/content/application~1json/schema'
   /test10:
     post:
       operationId: test10

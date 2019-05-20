@@ -12,6 +12,7 @@ import io.vertx.ext.web.openapi.BaseRouterFactoryTest;
 import io.vertx.ext.web.openapi.ParametersTestAPIClient;
 import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Francesco Guardiani @slinkydeveloper
  */
 @ExtendWith(VertxExtension.class)
+@Timeout(500)
 public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
 
   public final static String SPEC_URL = "./src/test/resources/specs/openapi_parameters_compatibility_spec.yaml";

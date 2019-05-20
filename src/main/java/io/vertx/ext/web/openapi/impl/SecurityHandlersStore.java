@@ -1,9 +1,10 @@
 package io.vertx.ext.web.openapi.impl;
 
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.api.contract.RouterFactoryException;
+import io.vertx.ext.web.openapi.RouterFactoryException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,47 +77,49 @@ class SecurityHandlersStore {
     securityHandlers.computeIfAbsent(new SecurityRequirementKey(name), k -> new ArrayList<>()).add(handler);
   }
 
-  private List<Handler<RoutingContext>> mapWithFail(SecurityRequirementKey k) throws RouterFactoryException {
-    if (k.hasScope())
-      return Optional
-        .ofNullable((this.securityHandlers.get(k) != null) ? this.securityHandlers.get(k) : this.securityHandlers.get(k.cloneWithoutScope()))
-        .orElseThrow(() -> RouterFactoryException.createMissingSecurityHandler(k.getName(), k.getScope()));
-    else
-      return Optional.ofNullable(this.securityHandlers.get(k)).orElseThrow(() -> RouterFactoryException.createMissingSecurityHandler(k.getName()));
-  }
+//  private List<Handler<RoutingContext>> mapWithFail(List<JsonObject> k) throws RouterFactoryException {
+//    if (k.hasScope())
+//      return Optional
+//        .ofNullable((this.securityHandlers.get(k) != null) ? this.securityHandlers.get(k) : this.securityHandlers.get(k.cloneWithoutScope()))
+//        .orElseThrow(() -> RouterFactoryException.createMissingSecurityHandler(k.getName(), k.getScope()));
+//    else
+//      return Optional.ofNullable(this.securityHandlers.get(k)).orElseThrow(() -> RouterFactoryException.createMissingSecurityHandler(k.getName()));
+//  }
+//
+//  private List<Handler<RoutingContext>> mapWithoutFail(SecurityRequirementKey k) {
+//    if (k.hasScope())
+//      return Optional
+//        .ofNullable(this.securityHandlers.get(k))
+//        .orElseGet(() -> this.securityHandlers.get(k.cloneWithoutScope()));
+//    else
+//      return this.securityHandlers.get(k);
+//  }
+//
+//  protected List<Handler<RoutingContext>> solveSecurityHandlers(JsonArray nonTranslatedKeys, boolean failOnNotFound) {
+//    //TODO how do we manage and/or auths problem?
+//    List<List<JsonObject>> securityRequirements = this.translateRequirements(nonTranslatedKeys);
+//    if (failOnNotFound)
+//      return securityRequirements.stream().map(this::mapWithFail).flatMap(Collection::stream).collect(Collectors.toList());
+//    else
+//      return securityRequirements.stream().map(this::mapWithoutFail).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
+//  }
+//
+//  private List<List<JsonObject>> translateRequirements(JsonArray keys) {
+//    if (keys != null)
+//      return keys.stream()
+//        .flatMap(m -> m.entrySet().stream().flatMap(e -> {
+//          if (e.getValue() == null || e.getValue().size() == 0)
+//            return Stream.of(new SecurityRequirementKey(e.getKey()));
+//          else
+//            return e.getValue().stream().map(s -> new SecurityRequirementKey(e.getKey(), s));
+//        }))
+//        .collect(Collectors.toList());
+//    else
+//      return new ArrayList<>();
+//  }
 
-  private List<Handler<RoutingContext>> mapWithoutFail(SecurityRequirementKey k) {
-    if (k.hasScope())
-      return Optional
-        .ofNullable(this.securityHandlers.get(k))
-        .orElseGet(() -> this.securityHandlers.get(k.cloneWithoutScope()));
-    else
-      return this.securityHandlers.get(k);
-  }
-
-  protected List<Handler<RoutingContext>> solveSecurityHandlers(List<SecurityRequirement> nonTranslatedKeys, boolean failOnNotFound) {
-    List<SecurityRequirementKey> keys = this.translateRequirements(nonTranslatedKeys);
-    if (keys != null) {
-      if (failOnNotFound)
-        return keys.stream().map(this::mapWithFail).flatMap(Collection::stream).collect(Collectors.toList());
-      else
-        return keys.stream().map(this::mapWithoutFail).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
-    } else
-      return new ArrayList<>();
-  }
-
-  private List<SecurityRequirementKey> translateRequirements(List<SecurityRequirement> keys) {
-    if (keys != null)
-      return keys.stream()
-        .flatMap(m -> m.entrySet().stream().flatMap(e -> {
-          if (e.getValue() == null || e.getValue().size() == 0)
-            return Stream.of(new SecurityRequirementKey(e.getKey()));
-          else
-            return e.getValue().stream().map(s -> new SecurityRequirementKey(e.getKey(), s));
-        }))
-        .collect(Collectors.toList());
-    else
-      return new ArrayList<>();
+  protected List<Handler<RoutingContext>> solveSecurityHandlers(JsonArray nonTranslatedKeys, boolean failOnNotFound) {
+    return new ArrayList<>();
   }
 
 }

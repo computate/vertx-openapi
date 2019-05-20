@@ -6,8 +6,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.openapi.OpenAPI3RouterFactory;
 import io.vertx.ext.web.openapi.RouterFactory;
 import io.vertx.ext.web.openapi.RouterFactoryOptions;
 
