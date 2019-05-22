@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.vertx.ext.web.validation.testutils.TestRequest.*;
+import static io.vertx.junit5.web.TestRequest.*;
 import static io.vertx.ext.web.validation.testutils.ValidationTestUtils.*;
 import static io.vertx.ext.web.validation.testutils.ValidationTestUtils.badParameterResponse;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,7 +165,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(200))
+        .expect(statusCode(200))
         .send(testContext, checkpoint)
     );
   }
@@ -187,7 +187,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(500), statusMessage("ERROR"))
+        .expect(statusCode(500), statusMessage("ERROR"))
         .send(testContext, checkpoint)
     );
   }
@@ -221,7 +221,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(500), statusMessage("ABE"))
+        .expect(statusCode(500), statusMessage("ABE"))
         .send(testContext, checkpoint)
     );
   }
@@ -261,7 +261,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets_security_test")
-        .asserts(statusCode(200), statusMessage("User-Moderator-Admin-SuperAdmin-Done"))
+        .expect(statusCode(200), statusMessage("User-Moderator-Admin-SuperAdmin-Done"))
         .send(testContext, checkpoint)
     );
   }
@@ -288,7 +288,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets_security_test")
-        .asserts(statusCode(200), statusMessage("First handler: OK, Second handler: OK, Second api key: OK, Third api key: OK"))
+        .expect(statusCode(200), statusMessage("First handler: OK, Second handler: OK, Second api key: OK, Third api key: OK"))
         .send(testContext, checkpoint)
     );
   }
@@ -365,13 +365,13 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/petsWithoutSecurity")
-        .asserts(statusCode(200), statusMessage("OK"))
+        .expect(statusCode(200), statusMessage("OK"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/petsWithOverride")
-        .asserts(statusCode(200), statusMessage("Local-OK"))
+        .expect(statusCode(200), statusMessage("Local-OK"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/petsWithoutOverride")
-        .asserts(statusCode(200), statusMessage("Global-OK"))
+        .expect(statusCode(200), statusMessage("Global-OK"))
         .send(testContext, checkpoint);
     });
   }
@@ -409,7 +409,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       routerFactory.operation("showPetById").handler(RoutingContext::next);
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(501), statusMessage("Not Implemented"))
+        .expect(statusCode(501), statusMessage("Not Implemented"))
         .send(testContext, checkpoint)
     );
   }
@@ -429,8 +429,8 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       routerFactory.operation("createPets").handler(RoutingContext::next);
     }).setHandler(rc ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(405), statusMessage("Method Not Allowed"))
-        .asserts(resp ->
+        .expect(statusCode(405), statusMessage("Method Not Allowed"))
+        .expect(resp ->
           assertThat(new HashSet<>(Arrays.asList(resp.getHeader("Allow").split(Pattern.quote(", ")))))
             .isEqualTo(Stream.of("DELETE", "POST").collect(Collectors.toSet()))
         ).send(testContext, checkpoint)
@@ -460,9 +460,9 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .end());
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(200))
-        .asserts(headerResponse("header-from-global-handler", "some more dummy data"))
-
+        .expect(statusCode(200))
+        .expect(responseHeader("header-from-global-handler", "some more dummy data"))
+        .send(testContext)
     );
   }
 
@@ -484,7 +484,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         });
     }).setHandler(h ->
         testRequest(client, HttpMethod.GET, "/pets")
-          .asserts(statusCode(200), statusMessage("listPets"))
+          .expect(statusCode(200), statusMessage("listPets"))
           .send(testContext, checkpoint)
     );
   }
@@ -514,22 +514,22 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
       JsonObject obj = new JsonObject().put("name", "francesco");
       testRequest(client, HttpMethod.POST, "/consumesTest")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(obj))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(obj))
         .sendJson(obj, testContext, checkpoint);
 
       MultiMap form = MultiMap.caseInsensitiveMultiMap();
       form.add("name", "francesco");
       testRequest(client, HttpMethod.POST, "/consumesTest")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(obj))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(obj))
         .sendURLEncodedForm(form, testContext, checkpoint);
 
       MultipartForm multipartForm = MultipartForm.create();
       form.add("name", "francesco");
       testRequest(client, HttpMethod.POST, "/consumesTest")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(obj))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(obj))
         .sendMultipartForm(multipartForm, testContext, checkpoint);
     });
   }
@@ -554,12 +554,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
       String acceptableContentTypes = String.join(", ", "application/json", "text/plain");
       testRequest(client, HttpMethod.GET, "/producesTest")
-        .transformations(header("Accept", acceptableContentTypes))
-        .asserts(statusCode(200), headerResponse("Content-type", "application/json"))
+        .with(requestHeader("Accept", acceptableContentTypes))
+        .expect(statusCode(200), responseHeader("Content-type", "application/json"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/producesTest?fail=true")
-        .transformations(header("Accept", acceptableContentTypes))
-        .asserts(statusCode(500), headerResponse("Content-type", "text/plain"))
+        .with(requestHeader("Accept", acceptableContentTypes))
+        .expect(statusCode(500), responseHeader("Content-type", "text/plain"))
         .send(testContext, checkpoint);
     });
   }
@@ -583,10 +583,10 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         testContext.completeNow();
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/product/special")
-        .asserts(statusCode(200), statusMessage("special"))
+        .expect(statusCode(200), statusMessage("special"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/product/123")
-        .asserts(statusCode(200), statusMessage("123"))
+        .expect(statusCode(200), statusMessage("123"))
         .send(testContext, checkpoint);
     });
   }
@@ -612,7 +612,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         testContext.completeNow();
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/foo/a%3Ab?p2=a%3Ab")
-        .asserts(statusCode(200), statusMessage("a:b"))
+        .expect(statusCode(200), statusMessage("a:b"))
         .send(testContext, checkpoint)
     );
   }
@@ -666,12 +666,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
       JsonObject obj = new JsonObject().put("id", "aaa").put("name", "bla");
       testRequest(client, HttpMethod.POST, "/v1/working")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(obj))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(obj))
         .sendJson(obj, testContext, checkpoint);
       testRequest(client, HttpMethod.POST, "/v1/notworking")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(obj))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(obj))
         .sendJson(obj, testContext, checkpoint);
     });
   }
@@ -717,7 +717,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         testContext.completeNow();
     }).setHandler(h ->
       testRequest(client, HttpMethod.POST, "/jsonBody/empty")
-        .asserts(statusCode(200), jsonBodyResponse(new JsonObject().put("bodyEmpty", true)))
+        .expect(statusCode(200), jsonBodyResponse(new JsonObject().put("bodyEmpty", true)))
         .send(testContext)
     );
   }
@@ -741,7 +741,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .binaryFileUpload("file1", "random-file", "src/test/resources/random-file", "application/octet-stream")
         .attribute("type", "application/octet-stream");
       testRequest(client, HttpMethod.POST, "/testMultipartMultiple")
-        .asserts(statusCode(200), statusMessage("application/octet-stream"))
+        .expect(statusCode(200), statusMessage("application/octet-stream"))
         .sendMultipartForm(form1, testContext, checkpoint);
 
       MultipartForm form2 =
@@ -750,7 +750,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
           .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "text/plain")
           .attribute("type", "text/plain");
       testRequest(client, HttpMethod.POST, "/testMultipartMultiple")
-        .asserts(statusCode(200), statusMessage("text/plain"))
+        .expect(statusCode(200), statusMessage("text/plain"))
         .sendMultipartForm(form2, testContext, checkpoint);
 
       MultipartForm form3 =
@@ -759,7 +759,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
           .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "application/json")
           .attribute("type", "application/json");
       testRequest(client, HttpMethod.POST, "/testMultipartMultiple")
-        .asserts(statusCode(400))
+        .expect(statusCode(400))
         .sendMultipartForm(form3, testContext, checkpoint);
 
     });
@@ -785,7 +785,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
           .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "text/plain")
           .attribute("type", "text/plain");
       testRequest(client, HttpMethod.POST, "/testMultipartWildcard")
-        .asserts(statusCode(200), statusMessage("text/plain"))
+        .expect(statusCode(200), statusMessage("text/plain"))
         .sendMultipartForm(form1, testContext, checkpoint);
 
       MultipartForm form2 =
@@ -794,7 +794,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
           .binaryFileUpload("file1", "random.csv", "src/test/resources/random.csv", "text/csv")
           .attribute("type", "text/csv");
       testRequest(client, HttpMethod.POST, "/testMultipartWildcard")
-        .asserts(statusCode(200), statusMessage("text/csv"))
+        .expect(statusCode(200), statusMessage("text/csv"))
         .sendMultipartForm(form2, testContext, checkpoint);
 
       MultipartForm form3 =
@@ -803,7 +803,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
           .binaryFileUpload("file1", "random.txt", "src/test/resources/random.txt", "application/json")
           .attribute("type", "application/json");
       testRequest(client, HttpMethod.POST, "/testMultipartWildcard")
-        .asserts(statusCode(400))
+        .expect(statusCode(400))
         .sendMultipartForm(form3, testContext, checkpoint);
     });
   }
@@ -816,7 +816,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .handler(routingContext -> routingContext.response().setStatusMessage("ok").end());
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/pets")
-        .asserts(statusCode(200), statusMessage("ok"))
+        .expect(statusCode(200), statusMessage("ok"))
         .send(testContext)
     );
   }
@@ -833,11 +833,11 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         });
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/pets/3")
-        .asserts(statusCode(200), statusMessage("3"))
+        .expect(statusCode(200), statusMessage("3"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/pets/three")
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "petId", ParameterLocation.PATH))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "petId", ParameterLocation.PATH))
         .send(testContext, checkpoint);
     });
   }
@@ -869,7 +869,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       String serialized = String.join(",", values);
 
       testRequest(client, HttpMethod.GET, encoder.toString())
-        .asserts(statusCode(200), statusMessage(serialized))
+        .expect(statusCode(200), statusMessage(serialized))
         .send(testContext);
     });
   }
@@ -893,11 +893,11 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
       String serialized = String.join(",", "4", "2", "26");
       testRequest(client, HttpMethod.GET, "/queryTests/arrayTests/default?parameter=" + serialized)
-        .asserts(statusCode(200), statusMessage(serialized))
+        .expect(statusCode(200), statusMessage(serialized))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/queryTests/arrayTests/default?parameter=" + String.join(",", "4", "1", "26"))
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.PATH));
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.PATH));
     });
   }
 
@@ -913,7 +913,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/defaultString")
-        .asserts(statusCode(200), statusMessage("aString"))
+        .expect(statusCode(200), statusMessage("aString"))
         .send(testContext)
     );
   }
@@ -931,7 +931,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/defaultInt")
-        .asserts(statusCode(200), statusMessage("1"))
+        .expect(statusCode(200), statusMessage("1"))
         .send(testContext)
     );
   }
@@ -948,7 +948,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/defaultFloat")
-        .asserts(statusCode(200), statusMessage("1.0"))
+        .expect(statusCode(200), statusMessage("1.0"))
         .send(testContext)
     );
   }
@@ -965,7 +965,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/defaultDouble")
-        .asserts(statusCode(200), statusMessage("1.0"))
+        .expect(statusCode(200), statusMessage("1.0"))
         .send(testContext)
     );
   }
@@ -982,7 +982,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/defaultString?parameter")
-        .asserts(statusCode(200), statusMessage("0"))
+        .expect(statusCode(200), statusMessage("0"))
         .send(testContext)
     );
   }
@@ -999,7 +999,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/defaultBoolean?parameter")
-        .asserts(statusCode(200), statusMessage("true"))
+        .expect(statusCode(200), statusMessage("true"))
         .send(testContext)
     );
   }
@@ -1016,7 +1016,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         );
     }).setHandler(h ->
       testRequest(client, HttpMethod.GET, "/queryTests/byteFormat?parameter=Zm9vYmFyCg==")
-        .asserts(statusCode(200), statusMessage("Zm9vYmFyCg=="))
+        .expect(statusCode(200), statusMessage("Zm9vYmFyCg=="))
         .send(testContext)
     );
   }
@@ -1042,12 +1042,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         });
     }).setHandler(h -> {
       testRequest(client, HttpMethod.POST, "/formTests/arraytest")
-        .asserts(statusCode(200), statusMessage("a+b+c" + "10,8,4"))
+        .expect(statusCode(200), statusMessage("a+b+c" + "10,8,4"))
         .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "a+b+c").add("values", "10,8,4"), testContext, checkpoint);
 
       testRequest(client, HttpMethod.POST, "/formTests/arraytest")
-        .asserts(statusCode(400))
-        .asserts(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
+        .expect(statusCode(400))
+        .expect(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
         .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "id").add("values", "8,bla,2"), testContext, checkpoint);
     });
   }
@@ -1071,24 +1071,24 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       JsonObject valid = new JsonObject().put("id", "anId").put("values", new JsonArray().add(5).add(10).add(2));
 
       testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
-        .asserts(statusCode(200), jsonBodyResponse(valid))
+        .expect(statusCode(200), jsonBodyResponse(valid))
         .sendJson(valid, testContext, checkpoint);
 
       testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
-        .transformations(header("content-type", "application/json; charset=utf-8"))
-        .asserts(statusCode(200), jsonBodyResponse(valid))
+        .with(requestHeader("content-type", "application/json; charset=utf-8"))
+        .expect(statusCode(200), jsonBodyResponse(valid))
         .sendBuffer(valid.toBuffer(), testContext, checkpoint);
 
       testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
-        .transformations(header("content-type", "application/superapplication+json"))
-        .asserts(statusCode(200), jsonBodyResponse(valid))
+        .with(requestHeader("content-type", "application/superapplication+json"))
+        .expect(statusCode(200), jsonBodyResponse(valid))
         .sendBuffer(valid.toBuffer(), testContext, checkpoint);
 
       JsonObject invalid = new JsonObject().put("id", "anId").put("values", new JsonArray().add(5).add("bla").add(2));
 
       testRequest(client, HttpMethod.POST, "/jsonBodyTest/sampleTest")
-        .asserts(statusCode(400))
-        .asserts(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
+        .expect(statusCode(400))
+        .expect(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
         .sendJson(invalid, testContext, checkpoint);
 
     });
@@ -1108,8 +1108,8 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
 
       testRequest(client, HttpMethod.POST, "/pets")
-        .asserts(statusCode(400))
-        .asserts(failurePredicateResponse())
+        .expect(statusCode(400))
+        .expect(failurePredicateResponse())
         .send(testContext);
 
     });
@@ -1133,20 +1133,20 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,true")
-        .asserts(statusCode(200), statusMessage("5true"))
+        .expect(statusCode(200), statusMessage("5true"))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,")
-        .asserts(statusCode(200), statusMessage("5false"))
+        .expect(statusCode(200), statusMessage("5false"))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5")
-        .asserts(statusCode(200), statusMessage("5false"))
+        .expect(statusCode(200), statusMessage("5false"))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,bla")
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
     });
@@ -1167,16 +1167,16 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
 
       testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=true")
-        .asserts(statusCode(200), statusMessage("true"))
+        .expect(statusCode(200), statusMessage("true"))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=5")
-        .asserts(statusCode(200), statusMessage("5"))
+        .expect(statusCode(200), statusMessage("5"))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=bla")
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
     });
@@ -1220,12 +1220,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .put("param5", 2);
 
       testRequest(client, HttpMethod.POST, "/multipart/complex")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(expected))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(expected))
         .sendMultipartForm(form, testContext, checkpoint);
 
       testRequest(client, HttpMethod.POST, "/multipart/complex")
-        .asserts(statusCode(200))
+        .expect(statusCode(200))
         .send(testContext, checkpoint);
 
     });
@@ -1245,7 +1245,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         });
     }).setHandler(h -> {
       testRequest(client, HttpMethod.POST, "/pets")
-        .asserts(statusCode(200), statusMessage("0000"))
+        .expect(statusCode(200), statusMessage("0000"))
         .sendJson(new JsonObject().put("id", 1).put("name", "Willy"), testContext);
     });
   }
@@ -1270,17 +1270,17 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         });
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=2&wellKnownParam=hello")
-        .asserts(statusCode(200))
+        .expect(statusCode(200))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=a&wellKnownParam=hello")
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "params", ParameterLocation.QUERY))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "params", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=2&wellKnownParam=a")
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "wellKnownParam", ParameterLocation.QUERY))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "wellKnownParam", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
     });
   }
@@ -1307,8 +1307,8 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       obj.put("dateTime3", "2018-01-01T10:00:00-10:00");
 
       testRequest(client, HttpMethod.POST, "/jsonBodyWithDate")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(obj))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(obj))
         .sendJson(obj, testContext);
     });
   }
@@ -1333,12 +1333,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         });
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/query/form/explode/object?R=100&G=200&B=150&alpha=50")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject("{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\",\"alpha\":50}")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject("{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\",\"alpha\":50}")))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/query/form/explode/object?R=100&G=200&B=150&alpha=aaa")
-        .asserts(statusCode(400))
-        .asserts(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "color", ParameterLocation.QUERY))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "color", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
     });
   }

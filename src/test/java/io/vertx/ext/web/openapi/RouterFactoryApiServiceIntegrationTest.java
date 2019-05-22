@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static io.vertx.ext.web.validation.testutils.TestRequest.*;
+import static io.vertx.junit5.web.TestRequest.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -64,8 +64,8 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.operation("testA").routeToEventBus("someAddress");
     }).setHandler(h -> 
       testRequest(client, HttpMethod.POST, "/testA")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext)
     );
   }
@@ -83,12 +83,12 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.mountServiceInterface(service.getClass(), "someAddress");
     }).setHandler(h -> {
       testRequest(client, HttpMethod.POST, "/testA")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       testRequest(client, HttpMethod.POST, "/testB")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco?")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco?")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
     });
   }
@@ -110,23 +110,23 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.mountServicesFromExtensions();
     }).setHandler(h -> {
       testRequest(client, HttpMethod.POST, "/testA")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       
       testRequest(client, HttpMethod.POST, "/testB")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco?")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco?")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       
       testRequest(client, HttpMethod.POST, "/testC")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       
       testRequest(client, HttpMethod.POST, "/testD")
-        .asserts(statusCode(200))
-        .asserts(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")))
+        .expect(statusCode(200))
+        .expect(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
     });
   }
@@ -144,10 +144,10 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.mountServicesFromExtensions();
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/testPathLevel")
-        .asserts(statusCode(200), statusMessage("pathLevelGet"))
+        .expect(statusCode(200), statusMessage("pathLevelGet"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.POST, "/testPathLevel")
-        .asserts(statusCode(200), statusMessage("pathLevelPost"))
+        .expect(statusCode(200), statusMessage("pathLevelPost"))
         .send(testContext, checkpoint);
     });
   }
@@ -165,10 +165,10 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.mountServicesFromExtensions();
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/testMerge")
-        .asserts(statusCode(200), statusMessage("getPathLevel"))
+        .expect(statusCode(200), statusMessage("getPathLevel"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.POST, "/testMerge")
-        .asserts(statusCode(200), statusMessage("postPathLevel"))
+        .expect(statusCode(200), statusMessage("postPathLevel"))
         .send(testContext, checkpoint);
     });
   }
@@ -186,10 +186,10 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.mountServicesFromExtensions();
     }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/testMerge2")
-        .asserts(statusCode(200), statusMessage("getPathLevel"))
+        .expect(statusCode(200), statusMessage("getPathLevel"))
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.POST, "/testMerge2")
-        .asserts(statusCode(200), statusMessage("postPathLevel"))
+        .expect(statusCode(200), statusMessage("postPathLevel"))
         .send(testContext, checkpoint);
     });
   }

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.file.Paths;
 
-import static io.vertx.ext.web.validation.testutils.TestRequest.*;
+import static io.vertx.junit5.web.TestRequest.*;
 
 /**
  * This tests check the building of JSON schemas from OAS schemas and validation of JSON
@@ -81,7 +81,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
     vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "swaggers", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
       Object json = Json.decodeValue(buf);
       testRequest(client, HttpMethod.POST, uri)
-        .asserts(statusCode(200), jsonBodyResponse(json))
+        .expect(statusCode(200), jsonBodyResponse(json))
         .sendJson(json, testContext, checkpoint);
     }));
   }
@@ -92,7 +92,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
         Object reqJson = Json.decodeValue(reqBuf);
         Object resJson = Json.decodeValue(resBuf);
         testRequest(client, HttpMethod.POST, uri)
-          .asserts(statusCode(200), jsonBodyResponse(resJson))
+          .expect(statusCode(200), jsonBodyResponse(resJson))
           .sendJson(reqJson, testContext, checkpoint);
       }))
     ));
@@ -102,8 +102,8 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
     vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "swaggers", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
       Object json = Json.decodeValue(buf);
       testRequest(client, HttpMethod.POST, uri)
-        .asserts(statusCode(400))
-        .asserts(ValidationTestUtils.badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
+        .expect(statusCode(400))
+        .expect(ValidationTestUtils.badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
         .sendJson(json, testContext, checkpoint);
     }));
   }
