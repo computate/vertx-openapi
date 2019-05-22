@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 
-@Timeout(200)
 @ExtendWith(VertxExtension.class)
 public class OpenAPI3PathResolverTest {
 

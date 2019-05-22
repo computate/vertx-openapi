@@ -35,7 +35,6 @@ import static io.vertx.junit5.web.TestRequest.*;
  */
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("unchecked")
-@Timeout(500)
 public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactoryTest {
 
   final String OAS_PATH = "specs/schemas_test_spec.yaml";
@@ -63,6 +62,9 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
     startFileServer(vertx, testContext).compose(v ->
       loadFactoryAndStartServer(vertx, OAS_PATH, testContext, routerFactory -> {
         routerFactory.operations().forEach(op -> op.handler(handler));
+        routerFactory
+          .getSchemaParser()
+          .withStringFormatValidator("phone", s -> s.matches("^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\\s\\./0-9]*$"));
       })
     ).setHandler(testContext.succeeding(t -> testContext.completeNow()));
   }
@@ -78,7 +80,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
   }
 
   private void assertRequestOk(String uri, String jsonName, Vertx vertx, VertxTestContext testContext, Checkpoint checkpoint) {
-    vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "swaggers", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
+    vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "specs", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
       Object json = Json.decodeValue(buf);
       testRequest(client, HttpMethod.POST, uri)
         .expect(statusCode(200), jsonBodyResponse(json))
@@ -87,8 +89,8 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
   }
 
   private void assertRequestOk(String uri, String jsonNameRequest, String jsonNameResponse, Vertx vertx, VertxTestContext testContext, Checkpoint checkpoint) {
-    vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "swaggers", "test_json", "schemas_test", jsonNameRequest).toString(), testContext.succeeding(reqBuf ->
-      vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "swaggers", "test_json", "schemas_test", jsonNameResponse).toString(), testContext.succeeding(resBuf -> {
+    vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "specs", "test_json", "schemas_test", jsonNameRequest).toString(), testContext.succeeding(reqBuf ->
+      vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "specs", "test_json", "schemas_test", jsonNameResponse).toString(), testContext.succeeding(resBuf -> {
         Object reqJson = Json.decodeValue(reqBuf);
         Object resJson = Json.decodeValue(resBuf);
         testRequest(client, HttpMethod.POST, uri)
@@ -99,7 +101,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
   }
 
   private void assertRequestFail(String uri, String jsonName, Vertx vertx, VertxTestContext testContext, Checkpoint checkpoint) {
-    vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "swaggers", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
+    vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "specs", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
       Object json = Json.decodeValue(buf);
       testRequest(client, HttpMethod.POST, uri)
         .expect(statusCode(400))

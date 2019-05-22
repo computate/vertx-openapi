@@ -25,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Francesco Guardiani @slinkydeveloper
  */
 @SuppressWarnings("unchecked")
-@Timeout(500)
 public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTest {
 
   private final RouterFactoryOptions HANDLERS_TESTS_OPTIONS = new RouterFactoryOptions()

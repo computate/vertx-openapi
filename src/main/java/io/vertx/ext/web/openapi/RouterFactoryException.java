@@ -111,4 +111,8 @@ public class RouterFactoryException extends RuntimeException {
     return new RouterFactoryException(message, ErrorType.WRONG_SERVICE_EXTENSION, null);
   }
 
+  public static RouterFactoryException createRouterFactoryInstantiationError(Throwable e) {
+    return new RouterFactoryException("Cannot instantiate Router Factory", ErrorType.UNSUPPORTED_SPEC, e);
+  }
+
 }

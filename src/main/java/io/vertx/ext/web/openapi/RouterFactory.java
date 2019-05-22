@@ -14,6 +14,7 @@ import io.vertx.ext.json.schema.ValidationException;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.openapi.impl.OpenAPI3RouterFactoryImpl;
 import io.vertx.ext.web.openapi.impl.OpenAPIHolderImpl;
 
 import java.util.List;
@@ -191,7 +192,14 @@ public interface RouterFactory {
           handler.handle(Future.failedFuture(RouterFactoryException.createInvalidFileSpec(url, ar.cause())));
         }
       } else {
-        //TODO instantiate routerfactoryimpl
+        RouterFactory factory;
+        try {
+          factory = new OpenAPI3RouterFactoryImpl(vertx, loader, options);
+        } catch (Exception e) {
+          handler.handle(Future.failedFuture(RouterFactoryException.createRouterFactoryInstantiationError(e)));
+          return;
+        }
+        handler.handle(Future.succeededFuture(factory));
       }
     });
   }

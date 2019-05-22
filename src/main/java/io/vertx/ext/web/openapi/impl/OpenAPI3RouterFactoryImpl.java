@@ -90,14 +90,14 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
     this.securityHandlers = new SecurityHandlersStore();
 
     /* --- Initialization of operations --- */
-    spec.getOpenAPIResolved().forEach(pathEntry -> {
+    spec.getOpenAPIResolved().getJsonObject("paths").forEach(pathEntry -> {
       ((JsonObject)pathEntry.getValue()).forEach(opEntry -> {
         JsonObject operationModel = (JsonObject) opEntry.getValue();
         this.operations.put(
           operationModel.getString("operationId"),
           new OperationImpl(
             operationModel.getString("operationId"),
-            HttpMethod.valueOf(opEntry.getKey()),
+            HttpMethod.valueOf(opEntry.getKey().trim().toUpperCase()),
             pathEntry.getKey(),
             operationModel,
             (JsonObject) pathEntry.getValue(),

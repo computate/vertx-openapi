@@ -725,7 +725,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   @Test
   public void commaSeparatedMultipartEncoding(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(3);
-    loadFactoryAndStartServer(vertx, "src/test/resources/swaggers/multipart.yaml", testContext, routerFactory -> {
+    loadFactoryAndStartServer(vertx, "src/test/resources/specs/multipart.yaml", testContext, routerFactory -> {
       routerFactory.setOptions(new RouterFactoryOptions().setRequireSecurityHandlers(false));
       routerFactory.operation("testMultipartMultiple").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
@@ -768,7 +768,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   @Test
   public void wildcardMultipartEncoding(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(3);
-    loadFactoryAndStartServer(vertx, "src/test/resources/swaggers/multipart.yaml", testContext, routerFactory -> {
+    loadFactoryAndStartServer(vertx, "src/test/resources/specs/multipart.yaml", testContext, routerFactory -> {
       routerFactory.setOptions(new RouterFactoryOptions().setRequireSecurityHandlers(false));
       routerFactory.operation("testMultipartWildcard").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");

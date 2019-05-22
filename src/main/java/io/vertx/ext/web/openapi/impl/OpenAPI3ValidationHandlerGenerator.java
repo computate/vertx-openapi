@@ -49,6 +49,7 @@ public class OpenAPI3ValidationHandlerGenerator {
   }
 
   public ValidationHandlerImpl create(OperationImpl operation) {
+    //TODO error handling of this function?
     Map<ParameterLocation, List<ParameterProcessor>> parameterProcessors = new HashMap<>();
     List<BodyProcessor> bodyProcessors = new ArrayList<>();
     List<Function<RoutingContext, RequestPredicateResult>> predicates = new ArrayList<>();

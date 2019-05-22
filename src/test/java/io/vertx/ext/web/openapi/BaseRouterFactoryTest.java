@@ -16,6 +16,7 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.validation.testutils.ValidationTestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -38,9 +39,20 @@ public abstract class BaseRouterFactoryTest {
     client = WebClient.create(vertx, new WebClientOptions().setDefaultPort(9000).setDefaultHost("localhost"));
   }
 
+  @AfterEach
+  public void tearDown(VertxTestContext testContext) {
+    if (client != null) client.close();
+    if (server != null) server.close(testContext.completing());
+    else testContext.completeNow();
+  }
+
   protected Future<Void> startServer(Vertx vertx, RouterFactory factory) {
     Future<Void> fut = Future.future();
-    router = factory.createRouter();
+    try {
+      router = factory.createRouter();
+    } catch (Throwable e) {
+      return Future.failedFuture(e);
+    }
     ValidationTestUtils.mountRouterFailureHandler(router);
     client = WebClient.create(vertx, new WebClientOptions().setDefaultPort(9000).setDefaultHost("localhost"));
     server = vertx
@@ -57,7 +69,7 @@ public abstract class BaseRouterFactoryTest {
     Future<Void> f = Future.future();
     RouterFactory.create(vertx, specUri, testContext.succeeding(rf -> {
         configurator.accept(rf);
-        startServer(vertx, rf).setHandler(testContext.succeeding(h -> f.complete()));
+        startServer(vertx, rf).setHandler(f);
     }));
     return f;
   }
