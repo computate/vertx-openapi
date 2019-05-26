@@ -331,8 +331,9 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
         .flatMap(j -> j.getJsonObject("content", new JsonObject()).fieldNames().stream())
         .collect(Collectors.toSet());
 
-      for (String ct : consumes)
-        route.consumes(ct);
+      // for (String ct : consumes)
+        // route.consumes(ct);
+      // TODO Do we really need this?
 
       for (String ct : produces)
         route.produces(ct);

@@ -294,8 +294,6 @@ paths:
                   b:
                     type: boolean
                     default: false
-                required:
-                  - b
       responses:
         default:
           description: ok

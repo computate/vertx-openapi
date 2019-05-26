@@ -14,6 +14,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.impl.RouteImpl;
 import io.vertx.ext.web.multipart.MultipartForm;
 import io.vertx.ext.web.validation.*;
 import io.vertx.junit5.Checkpoint;
@@ -635,7 +636,11 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       routerFactory.operation("upload").handler(routingContext -> routingContext.response().setStatusCode(201).end());
 
       testContext.verify(() -> {
-        assertThat(routerFactory.createRouter().getRoutes().get(0)).isSameAs(bodyHandler);
+        assertThat(routerFactory.createRouter().getRoutes().get(0))
+          .extracting("contextHandlers")
+          .element(0)
+          .asList()
+          .hasOnlyOneElementSatisfying(b -> assertThat(b).isSameAs(bodyHandler));
       });
 
       testContext.completeNow();
@@ -1100,6 +1105,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   @Test
   public void testRequiredJsonBody(Vertx vertx, VertxTestContext testContext) {
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory.setOptions(HANDLERS_TESTS_OPTIONS);
       routerFactory
         .operation("createPets")
         .handler(routingContext ->
@@ -1108,20 +1114,19 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
             .setStatusCode(200)
             .end()
         );
-    }).setHandler(h -> {
-
+    }).setHandler(h ->
       testRequest(client, HttpMethod.POST, "/pets")
         .expect(statusCode(400))
         .expect(failurePredicateResponse())
-        .send(testContext);
-
-    });
+        .send(testContext)
+    );
   }
 
   @Test
   public void testAllOfQueryParam(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(4);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory.setOptions(HANDLERS_TESTS_OPTIONS);
       routerFactory
         .operation("alloftest")
         .handler(routingContext -> {
@@ -1140,7 +1145,8 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,")
-        .expect(statusCode(200), statusMessage("5false"))
+        .expect(statusCode(400))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5")
@@ -1149,7 +1155,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
       testRequest(client, HttpMethod.GET, "/queryTests/allOfTest?parameter=a,5,b,bla")
         .expect(statusCode(400))
-        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.PARSING_ERROR, "parameter", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
     });
@@ -1257,6 +1263,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   public void testQueryExpandedObjectTestOnlyAdditionalProperties(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(3);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory.setOptions(HANDLERS_TESTS_OPTIONS);
       routerFactory
         .operation("objectTestOnlyAdditionalProperties")
         .handler(routingContext -> {
@@ -1272,16 +1279,16 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
           routingContext.response().setStatusCode(200).end();
         });
     }).setHandler(h -> {
-      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=2&wellKnownParam=hello")
+      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=1&param2=2&wellKnownParam=hello")
         .expect(statusCode(200))
         .send(testContext, checkpoint);
 
-      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=a&wellKnownParam=hello")
+      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=1&param2=a&wellKnownParam=hello")
         .expect(statusCode(400))
-        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "params", ParameterLocation.QUERY))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.PARSING_ERROR, "params", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
-      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=2&param2=2&wellKnownParam=a")
+      testRequest(client, HttpMethod.GET, "/queryTests/objectTests/onlyAdditionalProperties?param1=1&param2=2&wellKnownParam=a")
         .expect(statusCode(400))
         .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "wellKnownParam", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
@@ -1341,7 +1348,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/query/form/explode/object?R=100&G=200&B=150&alpha=aaa")
         .expect(statusCode(400))
-        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "color", ParameterLocation.QUERY))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.PARSING_ERROR, "color", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
     });
   }
