@@ -1,6 +1,7 @@
 package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.RouterFactoryException;
 
 import java.util.*;
@@ -13,8 +14,9 @@ import java.util.stream.Collectors;
  */
 public class OpenAPI3PathResolver {
 
-  String oasPath;
-  List<JsonObject> parameters;
+  final String oasPath;
+  final List<JsonObject> parameters;
+  final OpenAPIHolder openAPIHolder;
 
   Pattern resolvedPattern;
   //Key is new name, value is old name
@@ -25,7 +27,7 @@ public class OpenAPI3PathResolver {
 
   private boolean shouldThreatDotAsReserved;
 
-  public OpenAPI3PathResolver(String oasPath, List<JsonObject> parameters) {
+  public OpenAPI3PathResolver(String oasPath, List<JsonObject> parameters, OpenAPIHolder openAPIHolder) {
     this.oasPath = oasPath;
 
     // Filter parameters to get only path parameters
@@ -33,6 +35,8 @@ public class OpenAPI3PathResolver {
       this.parameters = parameters.stream().filter(parameter -> parameter.getString("in").equals("path")).collect(Collectors.toList());
     else
       this.parameters = new ArrayList<>();
+
+    this.openAPIHolder = openAPIHolder;
 
     // If there's a parameter with label style, the dot should be escaped to avoid conflicts
     this.shouldThreatDotAsReserved = hasParameterWithStyle("label");
@@ -65,15 +69,20 @@ public class OpenAPI3PathResolver {
           regex.append(Pattern.quote(toQuote));
         lastMatchEnd = parametersMatcher.end();
 
+        //TODO HO CAPITO IL PROBLEMA MA NON HO VOGLIA DI RISOLVERLO ORA
+        // PERMUTAZIONE DEGLI ARGOMENTI FOTTE TUTTO
+
         String paramName = parametersMatcher.group(1);
         Optional<JsonObject> parameterOptional = parameters.stream().filter(p -> p.getString("name").equals(paramName)).findFirst();
         if (parameterOptional.isPresent()) {
           // For every parameter style I have to generate a different regular expression
           JsonObject parameter = parameterOptional.get();
+
+          JsonObject fakeSchema = OpenApi3Utils.generateFakeSchema(parameter.getJsonObject("schema", new JsonObject()), openAPIHolder);
           String style = parameter.getString("style", "simple");
           boolean explode = parameter.getBoolean("explode", false);
-          boolean isObject = OpenApi3Utils.isSchemaObjectOrCombinators(parameter.getJsonObject("schema", new JsonObject()));
-          boolean isArray = OpenApi3Utils.isSchemaArray(parameter.getJsonObject("schema", new JsonObject()));
+          boolean isObject = OpenApi3Utils.isSchemaObjectOrCombinators(fakeSchema);
+          boolean isArray = OpenApi3Utils.isSchemaArray(fakeSchema);
 
           String groupName = "p" + i;
 
@@ -111,11 +120,12 @@ public class OpenAPI3PathResolver {
             mappedGroups.put(groupName, paramName);
           } else if (style.equals("label")) {
             if (isObject && explode) {
-              Map<String, JsonObject> properties = OpenApi3Utils.solveObjectParameters(parameter.getJsonObject("schema"));
+              Map<String, JsonObject> properties = OpenApi3Utils.solveObjectParameters(fakeSchema);
+              List<RegexBuilder> regexBuilders = new ArrayList<>();
               for (Map.Entry<String, JsonObject> entry : properties.entrySet()) {
                 groupName = "p" + i;
-                regex.append(
-                  RegexBuilder.create().optionalGroup(
+                regexBuilders.add(
+                  RegexBuilder.create().group(
                     RegexBuilder.create()
                       .escapeCharacter(".").zeroOrOne().quote(entry.getKey()).append("=")
                       .namedGroup(groupName,
@@ -128,6 +138,12 @@ public class OpenAPI3PathResolver {
                 mappedGroups.put(groupName, entry.getKey());
                 i++;
               }
+              regex.append(
+                RegexBuilder.create().anyOfGroup(
+                  properties.size(),
+                  regexBuilders.stream()
+                )
+              );
             } else {
               regex.append(
                 RegexBuilder.create()
@@ -142,11 +158,12 @@ public class OpenAPI3PathResolver {
             }
           } else if (style.equals("matrix")) {
             if (isObject && explode) {
-              Map<String, JsonObject> properties = OpenApi3Utils.solveObjectParameters(parameter.getJsonObject("schema"));
+              Map<String, JsonObject> properties = OpenApi3Utils.solveObjectParameters(fakeSchema);
+              List<RegexBuilder> regexBuilders = new ArrayList<>();
               for (Map.Entry<String, JsonObject> entry : properties.entrySet()) {
                 groupName = "p" + i;
-                regex.append(
-                  RegexBuilder.create().optionalGroup(
+                regexBuilders.add(
+                  RegexBuilder.create().group(
                     RegexBuilder.create()
                       .escapeCharacter(";").quote(entry.getKey()).append("=")
                       .namedGroup(groupName,
@@ -160,6 +177,12 @@ public class OpenAPI3PathResolver {
                 mappedGroups.put(groupName, entry.getKey());
                 i++;
               }
+              regex.append(
+                RegexBuilder.create().anyOfGroup(
+                  properties.size(),
+                  regexBuilders.stream()
+                )
+              );
             } else if (isArray && explode) {
               regex.append(
                 RegexBuilder.create().namedGroup(

@@ -1,7 +1,8 @@
-package io.vertx.ext.web.openapi;
+package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.impl.JsonPointerIteratorImpl;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 
 public class JsonPointerIteratorWithLoader extends JsonPointerIteratorImpl {
   private final OpenAPIHolder loader;

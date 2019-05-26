@@ -12,10 +12,14 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.json.schema.*;
+import io.vertx.ext.json.schema.Schema;
+import io.vertx.ext.json.schema.SchemaParser;
+import io.vertx.ext.json.schema.SchemaParserOptions;
+import io.vertx.ext.json.schema.SchemaRouter;
 import io.vertx.ext.json.schema.draft7.Draft7SchemaParser;
-import io.vertx.ext.json.schema.generic.URIUtils;
 import io.vertx.ext.json.schema.generic.ObservableFuture;
+import io.vertx.ext.json.schema.generic.SchemaURNId;
+import io.vertx.ext.json.schema.generic.URIUtils;
 import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
 
@@ -40,7 +44,6 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
   private final Map<URI, ObservableFuture<JsonObject>> externalSolvingRefs;
   private final YAMLMapper yamlMapper;
   private JsonObject openapiRoot;
-  private JsonObject openapiRootFlattened;
 
   private static URI openapiSchemaURI;
   private static JsonObject openapiSchemaJson;
@@ -83,8 +86,8 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
         })
         .compose(openapi -> {
           JsonObject openapiCopy = openapi.copy();
-          deepSubstituteForValidation(openapiCopy, JsonPointer.fromURI(initialScope), new ArrayList<>());
-          openapiRootFlattened = openapiCopy;
+          deepSubstituteForValidation(openapiCopy, JsonPointer.fromURI(initialScope), new HashMap<>());
+          // We need this shitty flattened spec just to validate it
           return openapiSchema.validateAsync(openapiCopy).map(openapi);
         });
   }
@@ -97,7 +100,7 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
 
   @Override
   public JsonObject solveIfNeeded(JsonObject obj) {
-    if (obj.containsKey("$ref")) {
+    if (isRef(obj)) {
       JsonObject o = getCached(JsonPointer.fromURI(URI.create(obj.getString("$ref"))));
       if (!o.equals(obj))
         return solveIfNeeded(o);
@@ -105,14 +108,69 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
     return obj;
   }
 
+  private boolean isRef(JsonObject object) {
+    return object.containsKey("$ref");
+  }
+
   @Override
   public JsonObject getOpenAPI() {
     return openapiRoot;
   }
 
-  @Override
-  public JsonObject getOpenAPIResolved() {
-    return openapiRootFlattened;
+  public Map.Entry<JsonPointer, JsonObject> normalizeSchema(JsonObject schema, JsonPointer scope, Map<JsonPointer, JsonObject> additionalSchemasToRegister) {
+    JsonObject normalized = schema.copy();
+    JsonPointer newId = new SchemaURNId().toPointer();
+    normalized.put("x-$id", newId.toURI().toString());
+
+    innerNormalizeSchema(normalized, scope, additionalSchemasToRegister);
+    return new AbstractMap.SimpleImmutableEntry<>(newId, normalized);
+  }
+
+  private void innerNormalizeSchema(Object schema, JsonPointer schemaRootScope, Map<JsonPointer, JsonObject> additionalSchemasToRegister) {
+    if (schema instanceof JsonObject) {
+      JsonObject schemaObject = (JsonObject) schema;
+      if (isRef(schemaObject)) {
+        // Ok so we found a $ref
+        JsonPointer refPointer = JsonPointer.fromURI(URI.create(schemaObject.getString("$ref")));
+
+        if (refPointer.isParent(schemaRootScope)) {
+          // If it's a circular $ref, I need to remove $ref URI component and replace with newRef = scope - refPointer
+          JsonPointer newRef = OpenApi3Utils.pointerDifference(schemaRootScope, refPointer);
+          schemaObject.put("$ref", newRef.toURI().toString());
+        } else if (refPointer.equals(schemaRootScope)) {
+          // If it's a circular $ref that points to schema root, I need to remove $ref URI component and replace with newRef = scope - refPointer
+          JsonPointer newRef = JsonPointer.create();
+          schemaObject.put("$ref", newRef.toURI().toString());
+        } else {
+          // If it's not a circular $ref, I generate an id, I substitute the stuff and I register the schema to parse
+          // Retrieve the cached schema
+          JsonObject resolved = getCached(refPointer);
+          if (!resolved.containsKey("x-$id")) { // This schema was never touched
+            // And now the trick: I apply this function to this schema and then i register it in definitions
+            JsonPointer id = new SchemaURNId().toPointer();
+            resolved.put("x-$id", id.toURI().toString());
+
+            // Now we make a copy of resolved to don't mess up original openapi json
+            JsonObject resolvedCopy = resolved.copy();
+            innerNormalizeSchema(resolvedCopy, refPointer, additionalSchemasToRegister);
+
+            // Resolved it's ready to be consumed by the parser
+            additionalSchemasToRegister.put(id, resolvedCopy);
+          }
+          // Substitute schema $ref with new one!
+          schemaObject.put("$ref", resolved.getString("x-$id"));
+        }
+      } else {
+        // Walk into the structure
+        schemaObject.forEach(e -> innerNormalizeSchema(e.getValue(), schemaRootScope, additionalSchemasToRegister));
+      }
+    } else if (schema instanceof JsonArray) {
+      // Walk into the structure
+      JsonArray schemaArray = (JsonArray) schema;
+      for (int i = 0; i < schemaArray.size(); i++) {
+        innerNormalizeSchema(schemaArray.getValue(i), schemaRootScope, additionalSchemasToRegister);
+      }
+    }
   }
 
   protected URI getInitialScope() {
@@ -156,24 +214,38 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
     }
   }
 
-  private void deepSubstituteForValidation(Object obj, JsonPointer scope, List<JsonPointer> solvedPointersInThisCallTree) {
-    solvedPointersInThisCallTree.add(scope);
+  // We need this shitty substitution to get the validation working
+  private void deepSubstituteForValidation(Object obj, JsonPointer scope, Map<JsonPointer, JsonPointer> originalToSubstitutedMap) {
     if (obj instanceof JsonObject) {
       JsonObject jsonObject = (JsonObject) obj;
       if (jsonObject.containsKey("$ref")) {
         JsonPointer pointer = JsonPointer.fromURI(URI.create(jsonObject.getString("$ref")));
-        if (!pointer.isParent(scope) && !solvedPointersInThisCallTree.contains(pointer)) { // Circular refs hell!
-          JsonObject resolved = solveIfNeeded(getCached(pointer)).copy();
-          jsonObject.remove("$ref");
-          jsonObject.mergeIn(resolved);
-          jsonObject.put("x-$ref", pointer.toURI().toString());
-          deepSubstituteForValidation(jsonObject, pointer, solvedPointersInThisCallTree);
+        if (!pointer.isParent(scope)) { // Check circular refs hell!
+          if (!originalToSubstitutedMap.containsKey(pointer)) {
+            JsonObject resolved = solveIfNeeded(getCached(pointer)).copy();
+            jsonObject.remove("$ref");
+            jsonObject.mergeIn(resolved);
+            jsonObject.put("x-$ref", pointer.toURI().toString());
+            originalToSubstitutedMap.put(pointer, scope);
+            deepSubstituteForValidation(jsonObject, pointer, originalToSubstitutedMap);
+          } else {
+            JsonObject resolved = solveIfNeeded(getCached(pointer)).copy();
+            jsonObject.remove("$ref");
+            jsonObject.mergeIn(resolved);
+            jsonObject.put("x-$ref", originalToSubstitutedMap.get(pointer).toURI().toString());
+          }
         }
       } else
-        for (String key : jsonObject.fieldNames()) deepSubstituteForValidation(jsonObject.getValue(key), scope.copy().append(key), solvedPointersInThisCallTree);
+        for (String key : jsonObject.fieldNames())
+          deepSubstituteForValidation(jsonObject.getValue(key), scope.copy().append(key), originalToSubstitutedMap);
     }
     if (obj instanceof JsonArray) {
-      for (int i = 0; i < ((JsonArray)obj).size(); i++) deepSubstituteForValidation(((JsonArray)obj).getValue(i), scope.copy().append(Integer.toString(i)), solvedPointersInThisCallTree);
+      for (int i = 0; i < ((JsonArray)obj).size(); i++)
+        deepSubstituteForValidation(
+          ((JsonArray)obj).getValue(i),
+          scope.copy().append(Integer.toString(i)),
+          originalToSubstitutedMap
+        );
     }
   }
 
@@ -268,4 +340,7 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
     return ("jar".equals(ref.getScheme())) ? ref.getSchemeSpecificPart().split("!")[1].substring(1) : ref.getPath();
   }
 
+  public Map<URI, JsonObject> getAbsolutePaths() {
+    return absolutePaths;
+  }
 }

@@ -10,6 +10,5 @@ public interface OpenAPIHolder {
   JsonObject getCached(JsonPointer pointer);
   JsonObject solveIfNeeded(JsonObject obj);
   JsonObject getOpenAPI();
-  JsonObject getOpenAPIResolved();
 
 }

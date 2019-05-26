@@ -35,7 +35,6 @@ public abstract class BaseRouterFactoryTest {
   public void setUp(Vertx vertx) {
     schemaRouter = SchemaRouter.create(vertx, new SchemaRouterOptions());
     parser = OpenAPI3SchemaParser.create(new SchemaParserOptions(), schemaRouter);
-
     client = WebClient.create(vertx, new WebClientOptions().setDefaultPort(9000).setDefaultHost("localhost"));
   }
 
@@ -54,13 +53,19 @@ public abstract class BaseRouterFactoryTest {
       return Future.failedFuture(e);
     }
     ValidationTestUtils.mountRouterFailureHandler(router);
-    client = WebClient.create(vertx, new WebClientOptions().setDefaultPort(9000).setDefaultHost("localhost"));
+    router.errorHandler(404, rc -> {
+      rc.response()
+        .setStatusCode(404)
+        .end();
+    });
     server = vertx
       .createHttpServer()
       .requestHandler(router)
       .listen(9000, h -> {
         if (h.failed()) fut.fail(h.cause());
-        else fut.complete();
+        else {
+          fut.complete();
+        }
       });
     return fut;
   }
@@ -69,7 +74,7 @@ public abstract class BaseRouterFactoryTest {
     Future<Void> f = Future.future();
     RouterFactory.create(vertx, specUri, testContext.succeeding(rf -> {
         configurator.accept(rf);
-        startServer(vertx, rf).setHandler(f);
+        startServer(vertx, rf).setHandler(testContext.succeeding(v -> f.complete()));
     }));
     return f;
   }

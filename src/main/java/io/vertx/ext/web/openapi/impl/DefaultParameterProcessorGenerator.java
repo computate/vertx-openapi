@@ -2,68 +2,65 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.json.schema.openapi3.OpenAPI3SchemaParser;
-import io.vertx.ext.web.openapi.Operation;
-import io.vertx.ext.web.openapi.ParameterProcessorGenerator;
 import io.vertx.ext.web.validation.ParameterLocation;
 import io.vertx.ext.web.validation.ParameterProcessor;
 import io.vertx.ext.web.validation.ValueParser;
 import io.vertx.ext.web.validation.impl.ParameterProcessorImpl;
-import io.vertx.ext.web.validation.impl.SchemaValidator;
 import io.vertx.ext.web.validation.impl.SingleValueParameterParser;
 import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 public class DefaultParameterProcessorGenerator implements ParameterProcessorGenerator {
 
-  private final OpenAPI3SchemaParser schemaParser;
-
-  public DefaultParameterProcessorGenerator(OpenAPI3SchemaParser schemaParser) {
-    this.schemaParser = schemaParser;
+  @Override
+  public boolean canGenerate(JsonObject parameter, JsonObject fakeSchema, ParameterLocation parsedLocation, String parsedStyle) {
+    return !parameter.containsKey("content");
   }
 
   @Override
-  public boolean canGenerate(JsonObject parameter, ParameterLocation parsedLocation, String parsedStyle) {
-    return !parameter.containsKey("content") && !OpenApi3Utils.resolveExplode(parameter);
-  }
+  public ParameterProcessor generate(JsonObject parameter, JsonObject fakeSchema, JsonPointer parameterPointer, ParameterLocation parsedLocation, String parsedStyle, GeneratorContext context) {
+    SchemaHolder schemas = context.getSchemaHolder(
+      parameter.getJsonObject("schema", new JsonObject()),
+      fakeSchema,
+      parameterPointer.copy().append("schema")
+    );
 
-  @Override
-  public ParameterProcessor generate(JsonObject parameter, JsonPointer parameterPointer, ParameterLocation parsedLocation, String parsedStyle, Operation operation) {
-    JsonObject schema = parameter.getJsonObject("schema", new JsonObject());
+    ValueParser<String> valueParser;
+    if (OpenApi3Utils.isSchemaObjectOrCombinators(fakeSchema)) {
+      valueParser = generateValueParserForObjectParameter(schemas, parsedStyle);
+    } else if (OpenApi3Utils.isSchemaArray(fakeSchema)) {
+      valueParser = generateForArrayParameter(schemas, parsedStyle);
+    } else {
+      valueParser = generateForPrimitiveParameter(schemas);
+    }
+
     return new ParameterProcessorImpl(
       parameter.getString("name"),
       parsedLocation,
       !parameter.getBoolean("required", false),
       new SingleValueParameterParser(
         parameter.getString("name"),
-        OpenApi3Utils.isSchemaObjectOrCombinators(schema) ?
-          generateValueParserForObjectParameter(parameter, parsedStyle) :
-          OpenApi3Utils.isSchemaArray(schema) ? generateForArrayParameter(parameter, parsedStyle) : generateForPrimitiveParameter(parameter)
+        valueParser
       ),
-      new SchemaValidator(schemaParser.parse(
-        parameter.getJsonObject("schema", new JsonObject()),
-        parameterPointer.copy().append("schema")
-      ))
+      schemas.getValidator()
     );
   }
 
-  private ValueParser<String> generateValueParserForObjectParameter(JsonObject parameter, String parsedStyle) {
-    JsonObject fakeSchema = OpenApi3Utils.mergeCombinatorsWithOnlyObjectSchemaIfNecessary(parameter.getJsonObject("schema", new JsonObject()));
+  private ValueParser<String> generateValueParserForObjectParameter(SchemaHolder schemas, String parsedStyle) {
     return ContainerSerializationStyles.resolve(parsedStyle).getObjectFactory().newObjectParser(
-      ValueParserInferenceUtils.infeerPropertiesParsersForObjectSchema(fakeSchema),
-      ValueParserInferenceUtils.infeerPatternPropertiesParsersForObjectSchema(fakeSchema),
-      ValueParserInferenceUtils.infeerAdditionalPropertiesParserForObjectSchema(fakeSchema)
+      ValueParserInferenceUtils.infeerPropertiesParsersForObjectSchema(schemas.getFakeSchema()),
+      ValueParserInferenceUtils.infeerPatternPropertiesParsersForObjectSchema(schemas.getFakeSchema()),
+      ValueParserInferenceUtils.infeerAdditionalPropertiesParserForObjectSchema(schemas.getFakeSchema())
     );
   }
 
-  private ValueParser<String> generateForArrayParameter(JsonObject parameter, String parsedStyle) {
-    JsonObject fakeSchema = OpenApi3Utils.mergeCombinatorsWithOnlyObjectSchemaIfNecessary(parameter.getJsonObject("schema", new JsonObject()));
+  private ValueParser<String> generateForArrayParameter(SchemaHolder schemas, String parsedStyle) {
     return ContainerSerializationStyles.resolve(parsedStyle).getArrayFactory().newArrayParser(
-      ValueParserInferenceUtils.infeerItemsParserForArraySchema(fakeSchema)
+      ValueParserInferenceUtils.infeerItemsParserForArraySchema(schemas.getFakeSchema())
     );
   }
 
-  private ValueParser<String> generateForPrimitiveParameter(JsonObject parameter) {
-    return ValueParserInferenceUtils.infeerPrimitiveParser(parameter.getJsonObject("schema", new JsonObject()));
+  private ValueParser<String> generateForPrimitiveParameter(SchemaHolder schemas) {
+    return ValueParserInferenceUtils.infeerPrimitiveParser(schemas.getFakeSchema());
   }
 
 }

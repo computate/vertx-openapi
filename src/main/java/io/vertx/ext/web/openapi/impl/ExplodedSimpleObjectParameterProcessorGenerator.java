@@ -3,14 +3,14 @@ package io.vertx.ext.web.openapi.impl;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.json.schema.openapi3.OpenAPI3SchemaParser;
-import io.vertx.ext.web.openapi.Operation;
-import io.vertx.ext.web.openapi.ParameterProcessorGenerator;
 import io.vertx.ext.web.validation.MalformedValueException;
 import io.vertx.ext.web.validation.ParameterLocation;
 import io.vertx.ext.web.validation.ParameterProcessor;
 import io.vertx.ext.web.validation.ValueParser;
-import io.vertx.ext.web.validation.impl.*;
+import io.vertx.ext.web.validation.impl.ObjectParser;
+import io.vertx.ext.web.validation.impl.ParameterProcessorImpl;
+import io.vertx.ext.web.validation.impl.SingleValueParameterParser;
+import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -53,22 +53,21 @@ public class ExplodedSimpleObjectParameterProcessorGenerator implements Paramete
     }
   }
 
-  private final OpenAPI3SchemaParser schemaParser;
-
-  public ExplodedSimpleObjectParameterProcessorGenerator(OpenAPI3SchemaParser schemaParser) {
-    this.schemaParser = schemaParser;
-  }
-
   @Override
-  public boolean canGenerate(JsonObject parameter, ParameterLocation parsedLocation, String parsedStyle) {
+  public boolean canGenerate(JsonObject parameter, JsonObject fakeSchema, ParameterLocation parsedLocation, String parsedStyle) {
     return parsedStyle.equals("simple") &&
       OpenApi3Utils.resolveExplode(parameter) &&
-      OpenApi3Utils.isSchemaObjectOrCombinators(parameter.getJsonObject("schema", new JsonObject()));
+      OpenApi3Utils.isSchemaObjectOrCombinators(fakeSchema);
   }
 
   @Override
-  public ParameterProcessor generate(JsonObject parameter, JsonPointer parameterPointer, ParameterLocation parsedLocation, String parsedStyle, Operation operation) {
-    JsonObject fakeSchema = OpenApi3Utils.mergeCombinatorsWithOnlyObjectSchemaIfNecessary(parameter.getJsonObject("schema", new JsonObject()));
+  public ParameterProcessor generate(JsonObject parameter, JsonObject fakeSchema, JsonPointer parameterPointer, ParameterLocation parsedLocation, String parsedStyle, GeneratorContext context) {
+    SchemaHolder schemas = context.getSchemaHolder(
+      parameter.getJsonObject("schema", new JsonObject()),
+      fakeSchema,
+      parameterPointer.copy().append("schema")
+    );
+
     return new ParameterProcessorImpl(
       parameter.getString("name"),
       parsedLocation,
@@ -76,12 +75,12 @@ public class ExplodedSimpleObjectParameterProcessorGenerator implements Paramete
       new SingleValueParameterParser(
         parameter.getString("name"),
         new ExplodedSimpleObjectValueParser(
-          ValueParserInferenceUtils.infeerPropertiesParsersForObjectSchema(fakeSchema),
-          ValueParserInferenceUtils.infeerPatternPropertiesParsersForObjectSchema(fakeSchema),
-          ValueParserInferenceUtils.infeerAdditionalPropertiesParserForObjectSchema(fakeSchema)
+          ValueParserInferenceUtils.infeerPropertiesParsersForObjectSchema(schemas.getFakeSchema()),
+          ValueParserInferenceUtils.infeerPatternPropertiesParsersForObjectSchema(schemas.getFakeSchema()),
+          ValueParserInferenceUtils.infeerAdditionalPropertiesParserForObjectSchema(schemas.getFakeSchema())
         )
       ),
-      new SchemaValidator(schemaParser.parse(parameter.getJsonObject("schema"), parameterPointer.copy().append("schema")))
+      schemas.getValidator()
     );
   }
 }

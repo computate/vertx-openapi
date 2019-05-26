@@ -42,7 +42,11 @@ public class RouterFactoryException extends RuntimeException {
     /**
      * You specified a wrong service extension
      */
-    WRONG_SERVICE_EXTENSION
+    WRONG_SERVICE_EXTENSION,
+    /**
+     * Error while generating the {@link io.vertx.ext.web.validation.ValidationHandler}
+     */
+    CANNOT_GENERATE_VALIDATION_HANDLER
   }
 
   private ErrorType type;
@@ -111,8 +115,12 @@ public class RouterFactoryException extends RuntimeException {
     return new RouterFactoryException(message, ErrorType.WRONG_SERVICE_EXTENSION, null);
   }
 
-  public static RouterFactoryException createRouterFactoryInstantiationError(Throwable e) {
-    return new RouterFactoryException("Cannot instantiate Router Factory", ErrorType.UNSUPPORTED_SPEC, e);
+  public static RouterFactoryException createRouterFactoryInstantiationError(Throwable e, String url) {
+    return new RouterFactoryException("Cannot instantiate Router Factory for openapi " + url, ErrorType.UNSUPPORTED_SPEC, e);
+  }
+
+  public static RouterFactoryException createErrorWhileGeneratingValidationHandler(String message, Throwable cause) {
+    return new RouterFactoryException(message, ErrorType.CANNOT_GENERATE_VALIDATION_HANDLER, cause);
   }
 
 }

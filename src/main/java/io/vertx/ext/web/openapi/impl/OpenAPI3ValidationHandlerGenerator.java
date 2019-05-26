@@ -3,20 +3,17 @@ package io.vertx.ext.web.openapi.impl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.json.schema.SchemaParser;
-import io.vertx.ext.json.schema.SchemaRouter;
-import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.openapi.BodyProcessorGenerator;
-import io.vertx.ext.web.openapi.OpenAPIHolder;
-import io.vertx.ext.web.openapi.ParameterProcessorGenerator;
 import io.vertx.ext.web.openapi.RouterFactoryException;
-import io.vertx.ext.web.validation.*;
+import io.vertx.ext.web.validation.BodyProcessor;
+import io.vertx.ext.web.validation.ParameterLocation;
+import io.vertx.ext.web.validation.ParameterProcessor;
+import io.vertx.ext.web.validation.RequestPredicate;
 import io.vertx.ext.web.validation.impl.ValidationHandlerImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 //TODO this is where the inference logic should move
 public class OpenAPI3ValidationHandlerGenerator {
@@ -24,16 +21,16 @@ public class OpenAPI3ValidationHandlerGenerator {
   private static final JsonPointer BODY_REQUIRED_POINTER = JsonPointer.from("/requestBody/required");
   private static final JsonPointer REQUEST_BODY_CONTENT_POINTER = JsonPointer.from("/requestBody/content");
 
-  private final OpenAPIHolder holder;
-  private final SchemaRouter schemaRouter;
+  private final OpenAPIHolderImpl holder;
   private final SchemaParser schemaParser;
+  private final JsonPointerIteratorWithLoader iteratorWithLoader;
   private final List<ParameterProcessorGenerator> parameterProcessorGenerators;
   private final List<BodyProcessorGenerator> bodyProcessorGenerators;
 
-  public OpenAPI3ValidationHandlerGenerator(OpenAPIHolder holder, SchemaRouter schemaRouter, SchemaParser schemaParser) {
+  public OpenAPI3ValidationHandlerGenerator(OpenAPIHolderImpl holder, SchemaParser schemaParser) {
     this.holder = holder;
-    this.schemaRouter = schemaRouter;
     this.schemaParser = schemaParser;
+    this.iteratorWithLoader = new JsonPointerIteratorWithLoader(holder);
     this.parameterProcessorGenerators = new ArrayList<>();
     this.bodyProcessorGenerators = new ArrayList<>();
   }
@@ -52,45 +49,60 @@ public class OpenAPI3ValidationHandlerGenerator {
     //TODO error handling of this function?
     Map<ParameterLocation, List<ParameterProcessor>> parameterProcessors = new HashMap<>();
     List<BodyProcessor> bodyProcessors = new ArrayList<>();
-    List<Function<RoutingContext, RequestPredicateResult>> predicates = new ArrayList<>();
+
+    GeneratorContext context = new GeneratorContext(this.schemaParser, holder, operation);
 
     // Parse parameter processors
     for (Map.Entry<JsonPointer, JsonObject> pe : operation.getParameters().entrySet()) {
-      ParameterLocation parsedLocation = ParameterLocation.valueOf(pe.getValue().getString("in").toLowerCase());
+      ParameterLocation parsedLocation = ParameterLocation.valueOf(pe.getValue().getString("in").toUpperCase());
       String parsedStyle = OpenApi3Utils.resolveStyle(pe.getValue());
 
       if (pe.getValue().getBoolean("allowReserved", false))
         throw RouterFactoryException
           .createUnsupportedSpecFeature("You are using allowReserved keyword in parameter " + pe.getKey() + " which is not supported");
 
-      ParameterProcessor generated = parameterProcessorGenerators.stream()
-        .filter(g -> g.canGenerate(pe.getValue(), parsedLocation, parsedStyle))
-        .findFirst().orElseThrow(() -> RouterFactoryException.cannotFindParameterProcessorGenerator(pe.getKey(), pe.getValue()))
-        .generate(pe.getValue(), pe.getKey(), parsedLocation, parsedStyle, operation);
-      if (!parameterProcessors.containsKey(generated.getLocation()))
-        parameterProcessors.put(generated.getLocation(), new ArrayList<>());
-      parameterProcessors.get(generated.getLocation()).add(generated);
+      JsonObject fakeSchema = context.fakeSchema(pe.getValue().getJsonObject("schema", new JsonObject()));
+
+      ParameterProcessorGenerator generator = parameterProcessorGenerators.stream()
+        .filter(g -> g.canGenerate(pe.getValue(), fakeSchema, parsedLocation, parsedStyle))
+        .findFirst().orElseThrow(() -> RouterFactoryException.cannotFindParameterProcessorGenerator(pe.getKey(), pe.getValue()));
+
+      System.out.println("Parametro " + pe.getKey() + " smandruppato da " + generator.getClass().getName());
+
+      try {
+        ParameterProcessor generated = generator
+          .generate(pe.getValue(), fakeSchema, pe.getKey(), parsedLocation, parsedStyle, context);
+
+        if (!parameterProcessors.containsKey(generated.getLocation()))
+          parameterProcessors.put(generated.getLocation(), new ArrayList<>());
+        parameterProcessors.get(generated.getLocation()).add(generated);
+      } catch (Exception e) {
+        throw RouterFactoryException
+          .createErrorWhileGeneratingValidationHandler(
+            String.format("Cannot generate parameter validator for parameter %s in %s", pe.getKey().toURI(), parsedLocation), e
+          );
+      }
     }
 
     // Parse body required predicate
-    if (parseIsBodyRequired(operation)) predicates.add(RequestPredicate.BODY_REQUIRED);
+    if (parseIsBodyRequired(operation)) context.addPredicate(RequestPredicate.BODY_REQUIRED);
 
     // Parse body processors
-    for (Map.Entry<String, Object> mediaType : (JsonObject) REQUEST_BODY_CONTENT_POINTER.queryJsonOrDefault(operation.getOperationModel(), new JsonObject())) {
+    for (Map.Entry<String, Object> mediaType : (JsonObject) REQUEST_BODY_CONTENT_POINTER.queryOrDefault(operation.getOperationModel(), iteratorWithLoader, new JsonObject())) {
       JsonObject mediaTypeModel = (JsonObject) mediaType.getValue();
       JsonPointer mediaTypePointer = operation.getPointer().copy().append("requestBody").append("content").append(mediaType.getKey());
       BodyProcessor generated = bodyProcessorGenerators.stream()
         .filter(g -> g.canGenerate(mediaType.getKey(), mediaTypeModel))
         .findFirst().orElseThrow(() -> RouterFactoryException.createBodyNotSupported(mediaTypePointer))
-        .generate(mediaType.getKey(), mediaTypeModel, mediaTypePointer, operation, predicates);
+        .generate(mediaType.getKey(), mediaTypeModel, mediaTypePointer, context);
       bodyProcessors.add(generated);
     }
 
-    return new ValidationHandlerImpl(parameterProcessors, bodyProcessors, predicates);
+    return new ValidationHandlerImpl(parameterProcessors, bodyProcessors, context.getPredicates());
   }
 
   private boolean parseIsBodyRequired(OperationImpl operation) {
-    return (boolean) BODY_REQUIRED_POINTER.queryJsonOrDefault(operation.getOperationModel(), false);
+    return (boolean) BODY_REQUIRED_POINTER.queryOrDefault(operation.getOperationModel(), iteratorWithLoader, false);
   }
 
 

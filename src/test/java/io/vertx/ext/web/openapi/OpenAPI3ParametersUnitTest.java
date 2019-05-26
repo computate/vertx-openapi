@@ -38,7 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Francesco Guardiani @slinkydeveloper
  */
 @ExtendWith(VertxExtension.class)
-@Timeout(500)
 public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
 
   public final static String SPEC_URL = "./src/test/resources/specs/openapi_parameters_compatibility_spec.yaml";
@@ -60,6 +59,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMatrixNoexplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_matrix_noexplode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -87,7 +87,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMatrixNoexplodeString(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -108,6 +107,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMatrixNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_matrix_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -137,7 +137,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMatrixNoexplodeArray(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -158,6 +157,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMatrixNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_matrix_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -187,7 +187,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMatrixNoexplodeObject(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -208,6 +207,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMatrixExplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_matrix_explode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -235,7 +235,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMatrixExplodeString(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -256,6 +255,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMatrixExplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_matrix_explode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -285,7 +285,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMatrixExplodeArray(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -306,6 +305,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMatrixExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_matrix_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -335,7 +335,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMatrixExplodeObject(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -356,6 +355,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathLabelNoexplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_label_noexplode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -383,7 +383,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathLabelNoexplodeString(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -404,6 +403,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathLabelNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_label_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -433,7 +433,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathLabelNoexplodeArray(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -454,6 +453,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathLabelNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_label_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -483,7 +483,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathLabelNoexplodeObject(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -504,6 +503,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathLabelExplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_label_explode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -531,7 +531,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathLabelExplodeString(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -552,6 +551,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathLabelExplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_label_explode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -581,7 +581,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathLabelExplodeArray(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -602,6 +601,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathLabelExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_label_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -631,7 +631,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathLabelExplodeObject(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -652,6 +651,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathSimpleNoexplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_simple_noexplode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -679,7 +679,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathSimpleNoexplodeString(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -700,6 +699,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathSimpleNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_simple_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -729,7 +729,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathSimpleNoexplodeArray(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -750,6 +749,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathSimpleNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_simple_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -779,7 +779,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathSimpleNoexplodeObject(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -800,6 +799,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathSimpleExplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_simple_explode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -827,7 +827,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathSimpleExplodeString(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -848,6 +847,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathSimpleExplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_simple_explode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -877,7 +877,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathSimpleExplodeArray(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -898,6 +897,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathSimpleExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_simple_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -927,7 +927,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathSimpleExplodeObject(color_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -949,6 +948,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMultiSimpleLabel(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_multi_simple_label").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -985,7 +985,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMultiSimpleLabel(colorSimple_path, colorLabel_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color_simple\":\"blue\",\"color_label\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1007,6 +1006,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMultiSimpleMatrix(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_multi_simple_matrix").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1043,7 +1043,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMultiSimpleMatrix(colorSimple_path, colorMatrix_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color_simple\":\"blue\",\"color_matrix\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1065,6 +1064,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testPathMultiLabelMatrix(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("path_multi_label_matrix").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1103,7 +1103,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.pathMultiLabelMatrix(colorLabel_path, colorMatrix_path, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color_label\":[\"blue\",\"black\",\"brown\"],\"color_matrix\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1124,6 +1123,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormNoexplodeEmpty(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_noexplode_empty").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1150,7 +1150,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormNoexplodeEmpty(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":null}"));
           });
           testContext.completeNow();
@@ -1171,6 +1170,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormNoexplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_noexplode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1198,7 +1198,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormNoexplodeString(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -1219,6 +1218,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1248,7 +1248,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormNoexplodeArray(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1269,6 +1268,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1298,7 +1298,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormNoexplodeObject(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1319,6 +1318,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormExplodeEmpty(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_explode_empty").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1345,7 +1345,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormExplodeEmpty(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":null}"));
           });
           testContext.completeNow();
@@ -1366,6 +1365,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormExplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_explode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1393,7 +1393,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormExplodeString(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -1414,6 +1413,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormExplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_explode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1443,7 +1443,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormExplodeArray(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1464,6 +1463,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryFormExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_form_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1493,7 +1493,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryFormExplodeObject(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1514,6 +1513,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQuerySpaceDelimitedNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_spaceDelimited_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1543,7 +1543,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.querySpaceDelimitedNoexplodeArray(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1564,6 +1563,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQuerySpaceDelimitedNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_spaceDelimited_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1593,7 +1593,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.querySpaceDelimitedNoexplodeObject(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1614,6 +1613,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryPipeDelimitedNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_pipeDelimited_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1643,7 +1643,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryPipeDelimitedNoexplodeArray(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1664,6 +1663,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryPipeDelimitedNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_pipeDelimited_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1693,7 +1693,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryPipeDelimitedNoexplodeObject(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1714,6 +1713,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testQueryDeepObjectExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("query_deepObject_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1743,7 +1743,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.queryDeepObjectExplodeObject(color_query, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1764,6 +1763,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormNoexplodeEmpty(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_noexplode_empty").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1790,7 +1790,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormNoexplodeEmpty(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":null}"));
           });
           testContext.completeNow();
@@ -1811,6 +1810,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormNoexplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_noexplode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1838,7 +1838,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormNoexplodeString(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -1859,6 +1858,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1888,7 +1888,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormNoexplodeArray(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -1909,6 +1908,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1938,7 +1938,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormNoexplodeObject(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -1959,6 +1958,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormExplodeEmpty(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_explode_empty").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -1985,7 +1985,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormExplodeEmpty(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":null}"));
           });
           testContext.completeNow();
@@ -2006,6 +2005,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormExplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_explode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2033,7 +2033,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormExplodeString(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -2054,6 +2053,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormExplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_explode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2083,7 +2083,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormExplodeArray(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -2104,6 +2103,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testCookieFormExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("cookie_form_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2133,7 +2133,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.cookieFormExplodeObject(color_cookie, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -2154,6 +2153,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testHeaderSimpleNoexplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("header_simple_noexplode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2181,7 +2181,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.headerSimpleNoexplodeString(color_header, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -2202,6 +2201,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testHeaderSimpleNoexplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("header_simple_noexplode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2231,7 +2231,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.headerSimpleNoexplodeArray(color_header, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -2252,6 +2251,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testHeaderSimpleNoexplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("header_simple_noexplode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2281,7 +2281,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.headerSimpleNoexplodeObject(color_header, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();
@@ -2302,6 +2301,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testHeaderSimpleExplodeString(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("header_simple_explode_string").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2329,7 +2329,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.headerSimpleExplodeString(color_header, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":\"blue\"}"));
           });
           testContext.completeNow();
@@ -2350,6 +2349,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testHeaderSimpleExplodeArray(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("header_simple_explode_array").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2379,7 +2379,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.headerSimpleExplodeArray(color_header, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":[\"blue\",\"black\",\"brown\"]}"));
           });
           testContext.completeNow();
@@ -2400,6 +2399,7 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
   @Test
   public void testHeaderSimpleExplodeObject(Vertx vertx, VertxTestContext testContext){
     loadFactoryAndStartServer(vertx, SPEC_URL, testContext, routerFactory -> {
+      routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
       routerFactory.operation("header_simple_explode_object").handler(routingContext -> {
         RequestParameters params = routingContext.get("parsedParameters");
         JsonObject res = new JsonObject();
@@ -2429,7 +2429,6 @@ public class OpenAPI3ParametersUnitTest extends BaseRouterFactoryTest {
       apiClient.headerSimpleExplodeObject(color_header, (AsyncResult<HttpResponse> ar) -> {
         if (ar.succeeded()) {
           testContext.verify(() -> {
-            assertThat(ar.result().statusCode()).isEqualTo(200);
             assertThat(ar.result().bodyAsJsonObject()).isEqualTo(new JsonObject("{\"color\":{\"R\":\"100\",\"G\":\"200\",\"B\":\"150\"}}"));
           });
           testContext.completeNow();

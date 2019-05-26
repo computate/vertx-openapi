@@ -83,7 +83,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
     vertx.fileSystem().readFile(Paths.get("src", "test", "resources", "specs", "test_json", "schemas_test", jsonName).toString(), testContext.succeeding(buf -> {
       Object json = Json.decodeValue(buf);
       testRequest(client, HttpMethod.POST, uri)
-        .expect(statusCode(200), jsonBodyResponse(json))
+        .expect(jsonBodyResponse(json), statusCode(200))
         .sendJson(json, testContext, checkpoint);
     }));
   }
@@ -94,7 +94,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
         Object reqJson = Json.decodeValue(reqBuf);
         Object resJson = Json.decodeValue(resBuf);
         testRequest(client, HttpMethod.POST, uri)
-          .expect(statusCode(200), jsonBodyResponse(resJson))
+          .expect(jsonBodyResponse(resJson), statusCode(200))
           .sendJson(reqJson, testContext, checkpoint);
       }))
     ));
@@ -184,7 +184,7 @@ public class RouterFactoryBodyValidationIntegrationTest extends BaseRouterFactor
     Checkpoint checkpoint = testContext.checkpoint(3);
     assertRequestOk("/test9", "test6_ok.json", vertx, testContext, checkpoint); // Test6 should work
     assertRequestOk("/test9", "test9_ok.json", vertx, testContext, checkpoint);
-    assertRequestFail("/test8", "test9_fail.json", vertx, testContext, checkpoint);
+    assertRequestFail("/test9", "test9_fail.json", vertx, testContext, checkpoint);
   }
 
   @Test

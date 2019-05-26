@@ -109,23 +109,19 @@ public class RouterFactoryApiServiceIntegrationTest extends BaseRouterFactoryTes
       routerFactory.mountServicesFromExtensions();
     }).setHandler(h -> {
       testRequest(client, HttpMethod.POST, "/testA")
-        .expect(statusCode(200))
-        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco!")), statusCode(200))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       
       testRequest(client, HttpMethod.POST, "/testB")
-        .expect(statusCode(200))
-        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco?")))
+        .expect(jsonBodyResponse(new JsonObject().put("result", "Ciao Francesco?")), statusCode(200))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       
       testRequest(client, HttpMethod.POST, "/testC")
-        .expect(statusCode(200))
-        .expect(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")))
+        .expect(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")), statusCode(200))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
       
       testRequest(client, HttpMethod.POST, "/testD")
-        .expect(statusCode(200))
-        .expect(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")))
+        .expect(jsonBodyResponse(new JsonObject().put("content-type", "application/json").put("anotherResult", "Francesco Ciao?")), statusCode(200))
         .sendJson(new JsonObject().put("hello", "Ciao").put("name", "Francesco"), testContext, checkpoint);
     });
   }

@@ -196,7 +196,7 @@ public interface RouterFactory {
         try {
           factory = new OpenAPI3RouterFactoryImpl(vertx, loader, options);
         } catch (Exception e) {
-          handler.handle(Future.failedFuture(RouterFactoryException.createRouterFactoryInstantiationError(e)));
+          handler.handle(Future.failedFuture(RouterFactoryException.createRouterFactoryInstantiationError(e, url)));
           return;
         }
         handler.handle(Future.succeededFuture(factory));

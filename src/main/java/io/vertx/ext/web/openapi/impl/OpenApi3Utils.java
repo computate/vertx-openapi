@@ -5,15 +5,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.api.service.ServiceRequest;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.RouterFactoryException;
-import io.vertx.ext.web.validation.ValueParser;
 
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -59,28 +58,6 @@ public class OpenApi3Utils {
     return param.getBoolean("explode", "form".equals(style));
   }
 
-  /**
-   * The result of this function creates a schema with different semantics, so don't use it!
-   * It's useful for ValueParser inference only
-   *
-   * @param jsonObject
-   * @return
-   */
-  public static JsonObject mergeCombinatorsWithOnlyObjectSchemaIfNecessary(JsonObject jsonObject) {
-    if (jsonObject.containsKey("allOf") || jsonObject.containsKey("anyOf") || jsonObject.containsKey("oneOf")) {
-      JsonObject resultSchema = new JsonObject();
-      JsonArray schemasArray = jsonObject.getJsonArray("allOf", jsonObject.getJsonArray("anyOf", jsonObject.getJsonArray("oneOf")));
-      for (Object o : schemasArray) {
-        JsonObject innerSchema = (JsonObject) o;
-        if (!innerSchema.getString("type", "object").equals("object") || innerSchema.containsKey("items"))
-          throw new IllegalArgumentException("Combinator keyword contains a non object schema");
-        resultSchema = resultSchema.mergeIn(innerSchema, true);
-      }
-      return resultSchema;
-    } else {
-      return jsonObject;
-    }
-  }
 //
 //  public static boolean resolveAllowEmptyValue(JsonObject parameter) {
 //    if (parameter.getAllowEmptyValue() != null) {
@@ -297,6 +274,43 @@ public class OpenApi3Utils {
     }
     if (operationExtension == null) return pathExtension;
     return null;
+  }
+
+  // /definitions/hello/properties/a - /definitions/hello = /properties/a
+  public static JsonPointer pointerDifference(JsonPointer pointer1, JsonPointer pointer2) {
+    String firstPointer = pointer1.toString();
+    String secondPointer = pointer2.toString();
+
+    return JsonPointer.from(
+      firstPointer.substring(secondPointer.length())
+    );
+  }
+
+  public static JsonObject generateFakeSchema(JsonObject schema, OpenAPIHolder holder) {
+    JsonObject fakeSchema = holder.solveIfNeeded(schema).copy();
+    String combinatorKeyword = fakeSchema.containsKey("allOf") ? "allOf" : fakeSchema.containsKey("anyOf") ? "anyOf" : fakeSchema.containsKey("oneOf") ? "oneOf" : null;
+    if (combinatorKeyword != null) {
+      JsonArray schemasArray = fakeSchema.getJsonArray(combinatorKeyword);
+      for (int i = 0; i < schemasArray.size(); i++) {
+        JsonObject innerSchema = holder.solveIfNeeded(schemasArray.getJsonObject(i));
+        if (!"object".equals(innerSchema.getString("type")) || !innerSchema.containsKey("properties") || innerSchema.containsKey("items"))
+          throw new IllegalArgumentException("Combinator keyword contains a non object schema");
+        fakeSchema = fakeSchema.mergeIn(innerSchema, true);
+      }
+      fakeSchema.remove(combinatorKeyword);
+    }
+    if (fakeSchema.containsKey("properties")) {
+      JsonObject propsObj = fakeSchema.getJsonObject("properties");
+      for (String key : propsObj.fieldNames()) {
+        propsObj.put(key, holder.solveIfNeeded(propsObj.getJsonObject(key)));
+      }
+    }
+    if (fakeSchema.containsKey("items")) {
+      fakeSchema.put("items", holder.solveIfNeeded(fakeSchema.getJsonObject("items")));
+    }
+
+    return fakeSchema;
+
   }
 
 }

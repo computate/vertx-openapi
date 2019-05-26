@@ -172,7 +172,12 @@
         <executions>
           <execution>
             <id>generate-sources</id>
-            <phase>process-classes</phase>
+            <phase>generate-sources</phase>
+            <configuration>
+              <processors>
+                <processor>io.vertx.codegen.CodeGenProcessor</processor>
+              </processors>
+            </configuration>
           </execution>
           <execution>
             <id>generate-test-sources</id>

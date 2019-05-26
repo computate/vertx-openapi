@@ -113,7 +113,7 @@ paths:
                 children:
                   type: array
                   items:
-                    $ref: '#/paths/~1test8/post/requestBody/content/application~1json/schema' # Self refs!
+                    $ref: '#/paths/~1test8/post/requestBody/content/application~1json/schema'
               additionalProperties: {}
   /test9:
     post:
@@ -125,6 +125,7 @@ paths:
         content:
           application/json:
             schema:
+              type: 'object'
               allOf:
                 - $ref: 'http://localhost:8081/card.json'
                 - $ref: './schemas/Card_id.yaml'

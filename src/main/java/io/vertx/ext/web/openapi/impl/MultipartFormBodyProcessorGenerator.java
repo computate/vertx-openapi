@@ -2,29 +2,19 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.json.schema.openapi3.OpenAPI3SchemaParser;
-import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.openapi.BodyProcessorGenerator;
-import io.vertx.ext.web.openapi.Operation;
-import io.vertx.ext.web.validation.*;
+import io.vertx.ext.web.validation.BodyProcessor;
+import io.vertx.ext.web.validation.RequestPredicate;
+import io.vertx.ext.web.validation.ValueParser;
 import io.vertx.ext.web.validation.impl.FormBodyProcessorImpl;
 import io.vertx.ext.web.validation.impl.FormValueParser;
-import io.vertx.ext.web.validation.impl.SchemaValidator;
 import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class MultipartFormBodyProcessorGenerator implements BodyProcessorGenerator {
-
-  private final OpenAPI3SchemaParser schemaParser;
-
-  public MultipartFormBodyProcessorGenerator(OpenAPI3SchemaParser schemaParser) {
-    this.schemaParser = schemaParser;
-  }
 
   @Override
   public boolean canGenerate(String mediaTypeName, JsonObject mediaTypeObject) {
@@ -32,38 +22,42 @@ public class MultipartFormBodyProcessorGenerator implements BodyProcessorGenerat
   }
 
   @Override
-  public BodyProcessor generate(String mediaTypeName, JsonObject mediaTypeObject, JsonPointer mediaTypePointer, Operation operation, List<Function<RoutingContext, RequestPredicateResult>> predicates) {
-    JsonObject realSchema = mediaTypeObject.getJsonObject("schema", new JsonObject());
-    JsonObject fakeSchema = OpenApi3Utils.mergeCombinatorsWithOnlyObjectSchemaIfNecessary(realSchema);
-    Map<String, ValueParser<List<String>>> propertiesValueParsers =
-      ValueParserInferenceUtils.infeerPropertiesFormValueParserForObjectSchema(fakeSchema);
-    Map<Pattern, ValueParser<List<String>>> patternPropertiesValueParsers =
-      ValueParserInferenceUtils.infeerPatternPropertiesFormValueParserForObjectSchema(fakeSchema);
-    ValueParser<List<String>> additionalPropertiesValueParser = ValueParserInferenceUtils.infeerAdditionalPropertiesFormValueParserForObjectSchema(fakeSchema);
+  public BodyProcessor generate(String mediaTypeName, JsonObject mediaTypeObject, JsonPointer mediaTypePointer, GeneratorContext context) {
+    SchemaHolder schemas = context.getSchemaHolder(
+      mediaTypeObject.getJsonObject("schema", new JsonObject()),
+      mediaTypePointer.copy().append("schema")
+    );
 
-    for (Entry<String, Object> pe : fakeSchema.getJsonObject("properties", new JsonObject())) {
+    Map<String, ValueParser<List<String>>> propertiesValueParsers =
+      ValueParserInferenceUtils.infeerPropertiesFormValueParserForObjectSchema(schemas.getFakeSchema());
+    Map<Pattern, ValueParser<List<String>>> patternPropertiesValueParsers =
+      ValueParserInferenceUtils.infeerPatternPropertiesFormValueParserForObjectSchema(schemas.getFakeSchema());
+    ValueParser<List<String>> additionalPropertiesValueParser =
+      ValueParserInferenceUtils.infeerAdditionalPropertiesFormValueParserForObjectSchema(schemas.getFakeSchema());
+
+    for (Entry<String, Object> pe : schemas.getFakeSchema().getJsonObject("properties", new JsonObject())) {
       JsonObject propSchema = (JsonObject) pe.getValue();
-      String encoding = (String) JsonPointer.from("/encoding/" + pe.getKey()).queryJson(mediaTypeObject);
+      String encoding = (String) JsonPointer.create().append("encoding").append(pe.getKey()).append("contentType").queryJson(mediaTypeObject);
 
       if (encoding == null) {
         if (OpenApi3Utils.isSchemaObjectOrCombinators(propSchema) ||
           (OpenApi3Utils.isSchemaArray(propSchema) &&
             OpenApi3Utils.isSchemaObjectOrAllOfType((propSchema.getJsonObject("items", new JsonObject()))))) {
           propertiesValueParsers.put(pe.getKey(), new FormValueParser(false, ValueParser.JSON_PARSER));
-        } else if ("type".equals(propSchema.getString("type")) &&
+        } else if ("string".equals(propSchema.getString("type")) &&
           ("binary".equals(propSchema.getString("format")) || "base64".equals(propSchema.getString("format")))) {
-          predicates.add(
+          context.addPredicate(
             RequestPredicate.multipartFileUploadExists(pe.getKey(), Pattern.compile(Pattern.quote("application/octet-stream")))
           );
           propertiesValueParsers.remove(pe.getKey());
-          searchPropAndRemoveInSchema(realSchema, pe.getKey());
+          searchPropAndRemoveInSchema(schemas.getNormalizedSchema(), pe.getKey());
         }
       } else {
-        predicates.add(
+        context.addPredicate(
           RequestPredicate.multipartFileUploadExists(pe.getKey(), Pattern.compile(OpenApi3Utils.resolveContentTypeRegex(encoding)))
         );
         propertiesValueParsers.remove(pe.getKey());
-        searchPropAndRemoveInSchema(realSchema, pe.getKey());
+        searchPropAndRemoveInSchema(schemas.getNormalizedSchema(), pe.getKey());
       }
     }
 
@@ -72,7 +66,7 @@ public class MultipartFormBodyProcessorGenerator implements BodyProcessorGenerat
       patternPropertiesValueParsers,
       additionalPropertiesValueParser,
       mediaTypeName,
-      new SchemaValidator(schemaParser.parse(realSchema, mediaTypePointer.copy().append("schema")))
+      schemas.getValidator()
     );
   }
 

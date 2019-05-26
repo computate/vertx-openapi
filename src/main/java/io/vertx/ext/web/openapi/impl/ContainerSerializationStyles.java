@@ -1,6 +1,5 @@
 package io.vertx.ext.web.openapi.impl;
 
-import io.vertx.ext.web.validation.ParameterLocation;
 import io.vertx.ext.web.validation.dsl.ArrayParserFactory;
 import io.vertx.ext.web.validation.dsl.ObjectParserFactory;
 import io.vertx.ext.web.validation.impl.SplitterCharArrayParser;
@@ -8,12 +7,20 @@ import io.vertx.ext.web.validation.impl.SplitterCharObjectParser;
 
 public enum ContainerSerializationStyles {
   CSV(
-    itemsParser -> new SplitterCharArrayParser(itemsParser, ","),
-    (propertiesParser, patternPropertiesParser, additionalPropertiesParser) -> new SplitterCharObjectParser(propertiesParser, patternPropertiesParser, additionalPropertiesParser, ",")
+    itemsParser -> new SplitterCharArrayParser(itemsParser, "\\,"),
+    (propertiesParser, patternPropertiesParser, additionalPropertiesParser) -> new SplitterCharObjectParser(propertiesParser, patternPropertiesParser, additionalPropertiesParser, "\\,")
   ),
   DSV(
-    itemsParser -> new SplitterCharArrayParser(itemsParser, "."),
-    (propertiesParser, patternPropertiesParser, additionalPropertiesParser) -> new SplitterCharObjectParser(propertiesParser, patternPropertiesParser, additionalPropertiesParser, ".")
+    itemsParser -> new SplitterCharArrayParser(itemsParser, "\\."),
+    (propertiesParser, patternPropertiesParser, additionalPropertiesParser) -> new SplitterCharObjectParser(propertiesParser, patternPropertiesParser, additionalPropertiesParser, "\\.")
+  ),
+  SSV(
+      itemsParser -> new SplitterCharArrayParser(itemsParser, "\\s"),
+    (propertiesParser, patternPropertiesParser, additionalPropertiesParser) -> new SplitterCharObjectParser(propertiesParser, patternPropertiesParser, additionalPropertiesParser, "\\s")
+  ),
+  PSV(
+    itemsParser -> new SplitterCharArrayParser(itemsParser, "\\|"),
+    (propertiesParser, patternPropertiesParser, additionalPropertiesParser) -> new SplitterCharObjectParser(propertiesParser, patternPropertiesParser, additionalPropertiesParser, "\\|")
   );
 
   private final ArrayParserFactory arrayFactory;
@@ -40,8 +47,12 @@ public enum ContainerSerializationStyles {
         return CSV;
       case "label":
         return DSV;
+      case "spaceDelimited":
+        return SSV;
+      case "pipeDelimited":
+        return PSV;
       default:
-        return null;
+        throw new IllegalArgumentException("Cannot find deserializer for style " + style);
     }
   }
 }

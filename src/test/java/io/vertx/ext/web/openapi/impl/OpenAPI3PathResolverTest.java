@@ -36,7 +36,7 @@ public class OpenAPI3PathResolverTest {
       .loadOpenAPI("src/test/resources/specs/path_resolver_test.yaml")
       .setHandler(ar -> {
         if (ar.succeeded()) {
-          openapi = loader.getOpenAPIResolved();
+          openapi = loader.getOpenAPI();
           context.completeNow();
         } else context.failNow(ar.cause());
       });
@@ -80,7 +80,8 @@ public class OpenAPI3PathResolverTest {
         .getJsonArray("parameters", new JsonArray())
         .stream()
         .map(o -> (JsonObject)o)
-        .collect(Collectors.toList())
+        .collect(Collectors.toList()),
+      loader
     );
   }
 

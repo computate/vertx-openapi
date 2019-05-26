@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 @SuppressWarnings("unchecked")
 @ExtendWith(VertxExtension.class)
-@Timeout(500)
+@Timeout(1000)
 public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
   public static final String VALIDATION_SPEC = "src/test/resources/specs/validation_test.yaml";
@@ -102,7 +102,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         assertThat(routerFactoryAsyncResult.cause().getClass())
           .isEqualTo(RouterFactoryException.class);
         assertThat(((RouterFactoryException) routerFactoryAsyncResult.cause()).type())
-          .isEqualTo(RouterFactoryException.ErrorType.INVALID_SPEC);
+          .isEqualTo(RouterFactoryException.ErrorType.INVALID_FILE);
         testContext.completeNow();
       });
   }
@@ -149,6 +149,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   }
 
   private RouterFactoryOptions HANDLERS_TESTS_OPTIONS = new RouterFactoryOptions()
+    .setMountNotImplementedHandler(false)
     .setRequireSecurityHandlers(false);
 
   @Test
@@ -878,6 +879,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   public void testQueryParameterArrayDefaultStyle(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(2);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory.setOptions(HANDLERS_TESTS_OPTIONS);
       routerFactory
         .operation("arrayTest")
         .handler(routingContext -> {
@@ -897,7 +899,8 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/queryTests/arrayTests/default?parameter=" + String.join(",", "4", "1", "26"))
         .expect(statusCode(400))
-        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.PATH));
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .send(testContext, checkpoint);
     });
   }
 

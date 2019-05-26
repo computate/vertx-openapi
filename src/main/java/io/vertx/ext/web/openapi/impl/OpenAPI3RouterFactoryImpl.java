@@ -24,8 +24,8 @@ import io.vertx.ext.web.validation.impl.ValidationHandlerImpl;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Francesco Guardiani @slinkydeveloper
@@ -69,42 +69,51 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
     this.globalHandlers = new ArrayList<>();
     this.schemaRouter = SchemaRouter.create(vertx, options.toSchemaRouterOptions());
     this.schemaParser = OpenAPI3SchemaParser.create(new SchemaParserOptions(), schemaRouter);
-    this.validationHandlerGenerator = new OpenAPI3ValidationHandlerGenerator(openapi, schemaRouter, schemaParser);
+    this.validationHandlerGenerator = new OpenAPI3ValidationHandlerGenerator(spec, schemaParser);
+
+    spec.getAbsolutePaths().forEach((u, jo) -> schemaRouter.addJsonStructure(u, jo));
 
     // Load default generators
     this.validationHandlerGenerator
-      .addParameterProcessorGenerator(new DeepObjectParameterProcessorGenerator(schemaParser))
-      .addParameterProcessorGenerator(new ExplodedArrayParameterProcessorGenerator(schemaParser))
-      .addParameterProcessorGenerator(new ExplodedMatrixArrayParameterProcessorGenerator(schemaParser))
-      .addParameterProcessorGenerator(new ExplodedObjectParameterProcessorGenerator(schemaParser))
-      .addParameterProcessorGenerator(new ExplodedSimpleObjectParameterProcessorGenerator(schemaParser))
-      .addParameterProcessorGenerator(new JsonParameterProcessorGenerator(schemaParser))
-      .addParameterProcessorGenerator(new DefaultParameterProcessorGenerator(schemaParser));
+      .addParameterProcessorGenerator(new DeepObjectParameterProcessorGenerator())
+      .addParameterProcessorGenerator(new ExplodedArrayParameterProcessorGenerator())
+      .addParameterProcessorGenerator(new ExplodedMatrixArrayParameterProcessorGenerator())
+      .addParameterProcessorGenerator(new ExplodedObjectParameterProcessorGenerator())
+      .addParameterProcessorGenerator(new ExplodedSimpleObjectParameterProcessorGenerator())
+      .addParameterProcessorGenerator(new JsonParameterProcessorGenerator())
+      .addParameterProcessorGenerator(new DefaultParameterProcessorGenerator());
 
     this.validationHandlerGenerator
-      .addBodyProcessorGenerator(new JsonBodyProcessorGenerator(schemaParser))
-      .addBodyProcessorGenerator(new UrlEncodedFormBodyProcessorGenerator(schemaParser))
-      .addBodyProcessorGenerator(new MultipartFormBodyProcessorGenerator(schemaParser));
+      .addBodyProcessorGenerator(new JsonBodyProcessorGenerator())
+      .addBodyProcessorGenerator(new UrlEncodedFormBodyProcessorGenerator())
+      .addBodyProcessorGenerator(new MultipartFormBodyProcessorGenerator());
 
     this.operations = new LinkedHashMap<>();
     this.securityHandlers = new SecurityHandlersStore();
 
     /* --- Initialization of operations --- */
-    spec.getOpenAPIResolved().getJsonObject("paths").forEach(pathEntry -> {
-      ((JsonObject)pathEntry.getValue()).forEach(opEntry -> {
-        JsonObject operationModel = (JsonObject) opEntry.getValue();
-        this.operations.put(
-          operationModel.getString("operationId"),
-          new OperationImpl(
+    spec.solveIfNeeded(spec.getOpenAPI().getJsonObject("paths")).forEach(pathEntry -> {
+      if (pathEntry.getKey().startsWith("x-")) return;
+      JsonObject pathModel = spec.solveIfNeeded((JsonObject) pathEntry.getValue());
+      Stream.of(
+        "get", "put", "post", "delete", "options", "head", "patch", "trace"
+      )
+        .filter(pathModel::containsKey)
+        .forEach(verb -> {
+          JsonObject operationModel = spec.solveIfNeeded(pathModel.getJsonObject(verb));
+          this.operations.put(
             operationModel.getString("operationId"),
-            HttpMethod.valueOf(opEntry.getKey().trim().toUpperCase()),
-            pathEntry.getKey(),
-            operationModel,
-            (JsonObject) pathEntry.getValue(),
-            spec.getInitialScope()
-          )
-        );
-      });
+            new OperationImpl(
+              operationModel.getString("operationId"),
+              HttpMethod.valueOf(verb.toUpperCase()),
+              pathEntry.getKey(),
+              operationModel,
+              pathModel,
+              spec.getInitialScope(),
+              openapi
+            )
+          );
+        });
     });
   }
 
@@ -237,7 +246,7 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
     globalHandlers.forEach(globalRoute::handler);
 
     List<Handler<RoutingContext>> globalSecurityHandlers = securityHandlers
-      .solveSecurityHandlers(openapi.getOpenAPIResolved().getJsonArray("security", new JsonArray()), this.getOptions().isRequireSecurityHandlers());
+      .solveSecurityHandlers(openapi.getOpenAPI().getJsonArray("security", new JsonArray()), this.getOptions().isRequireSecurityHandlers());
     for (OperationImpl operation : operations.values()) {
       // If user don't want 501 handlers and the operation is not configured, skip it
       if (!options.isMountNotImplementedHandler() && !operation.isConfigured())
@@ -299,7 +308,7 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
       }
 
       // Now add all handlers to route
-      OpenAPI3PathResolver pathResolver = new OpenAPI3PathResolver(operation.getOpenAPIPath(), new ArrayList<>(operation.getParameters().values()));
+      OpenAPI3PathResolver pathResolver = new OpenAPI3PathResolver(operation.getOpenAPIPath(), new ArrayList<>(operation.getParameters().values()), openapi);
       Route route = pathResolver
         .solve() // If this optional is empty, this route doesn't need regex
         .map(solvedRegex -> router.routeWithRegex(operation.getHttpMethod(), solvedRegex.toString()))

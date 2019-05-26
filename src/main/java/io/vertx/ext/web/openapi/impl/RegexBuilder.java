@@ -1,6 +1,9 @@
 package io.vertx.ext.web.openapi.impl;
 
+import java.util.Arrays;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RegexBuilder {
 
@@ -31,6 +34,14 @@ public class RegexBuilder {
     return this;
   }
 
+  public RegexBuilder group(RegexBuilder group) {
+    stringBuilder.append("(");
+    stringBuilder.append(group.toString());
+    stringBuilder.append(")");
+    return this;
+  }
+
+
   public RegexBuilder atomicGroup(RegexBuilder group) {
     stringBuilder.append("(?>");
     stringBuilder.append(group.toString());
@@ -38,7 +49,7 @@ public class RegexBuilder {
     return this;
   }
 
-  public RegexBuilder optionalGroup(RegexBuilder group) {
+  public RegexBuilder optionalAtomicGroup(RegexBuilder group) {
     stringBuilder.append("(?>");
     stringBuilder.append(group.toString());
     stringBuilder.append(")?");
@@ -51,6 +62,21 @@ public class RegexBuilder {
     stringBuilder.append(">");
     stringBuilder.append(group.toString());
     stringBuilder.append(")");
+    return this;
+  }
+
+  public RegexBuilder anyOfGroup(int maxTimes, RegexBuilder... groups) {
+    anyOfGroup(maxTimes, Arrays.stream(groups));
+    return this;
+  }
+
+  public RegexBuilder anyOfGroup(int maxTimes, Stream<RegexBuilder> groups) {
+    stringBuilder.append("(");
+    stringBuilder.append(groups.map(RegexBuilder::toString).collect(Collectors.joining("|")));
+    stringBuilder
+      .append("){0,")
+      .append(maxTimes)
+      .append("}");
     return this;
   }
 

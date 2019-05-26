@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.Operation;
 
 import java.net.URI;
@@ -34,7 +35,7 @@ public class OperationImpl implements Operation {
   private String ebServiceMethodName;
   private DeliveryOptions ebServiceDeliveryOptions;
 
-  protected OperationImpl(String operationId, HttpMethod method, String path, JsonObject operationModel, JsonObject pathModel, URI specScope) {
+  protected OperationImpl(String operationId, HttpMethod method, String path, JsonObject operationModel, JsonObject pathModel, URI specScope, OpenAPIHolder holder) {
     this.operationId = operationId;
     this.method = method;
     this.path = path;
@@ -52,13 +53,13 @@ public class OperationImpl implements Operation {
     JsonArray pathParameters = pathModel.getJsonArray("parameters", new JsonArray());
 
     for (int i = 0; i < operationParameters.size(); i++) {
-      JsonObject parameterModel = operationParameters.getJsonObject(i);
+      JsonObject parameterModel = holder.solveIfNeeded(operationParameters.getJsonObject(i));
       JsonPointer parameterPointer = operationPointer.copy().append("parameters").append(i);
       this.parameters.put(parameterPointer, parameterModel);
     }
 
     for (int i = 0; i < pathParameters.size(); i++) {
-      JsonObject parameterModel = pathParameters.getJsonObject(i);
+      JsonObject parameterModel = holder.solveIfNeeded(pathParameters.getJsonObject(i));
       String paramName = parameterModel.getString("name");
       String paramIn = parameterModel.getString("in");
       // A parameter is uniquely identified by a tuple (name, in)
