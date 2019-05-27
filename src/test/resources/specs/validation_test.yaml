@@ -59,6 +59,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /queryTests/anyOfTest:
+    get:
+      operationId: anyOfTest
+      parameters:
+        - name: parameter
+          in: query
+          required: true
+          explode: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: integer
+              - type: array
+                items:
+                  type: integer
+              - type: object
+                properties:
+                  a:
+                    type: integer
+      responses:
+        default:
+          description: ok
   /pets/{petId}:
     get:
       summary: Info for a specific pet
@@ -128,8 +150,7 @@ paths:
       parameters:
         - name: parameter
           in: query
-          required: true
-          allowEmptyValue: true
+          required: false
           schema:
             type: string
             default: aString
@@ -180,9 +201,11 @@ paths:
       parameters:
         - name: parameter
           in: query
+          allowEmptyValue: true
+          required: false
           schema:
             type: boolean
-            default: true
+            default: false
       responses:
         default:
           description: ok
@@ -341,7 +364,10 @@ paths:
               properties:
                 param1:
                   type: string
-                param1binary:
+                param1Binary:
+                  type: string
+                  format: binary
+                param1NotRealBinary:
                   type: string
                   format: binary
                 param2:
@@ -362,13 +388,14 @@ paths:
               required:
                 - param1
                 - param1Binary
+                - param1NotRealBinary
                 - param3
             encoding:
               param3:
                 contentType: text/csv
               param1:
                 contentType: text/plain
-              param1Binary:
+              param1NotRealBinary:
                 contentType: text/plain
       responses:
         default:

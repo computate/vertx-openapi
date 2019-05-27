@@ -73,8 +73,13 @@ public abstract class BaseRouterFactoryTest {
   protected Future<Void> loadFactoryAndStartServer(Vertx vertx, String specUri, VertxTestContext testContext, Consumer<RouterFactory> configurator) {
     Future<Void> f = Future.future();
     RouterFactory.create(vertx, specUri, testContext.succeeding(rf -> {
+      try {
         configurator.accept(rf);
         startServer(vertx, rf).setHandler(testContext.succeeding(v -> f.complete()));
+      } catch (Exception e) {
+        testContext.failNow(e);
+        f.fail(e);
+      }
     }));
     return f;
   }

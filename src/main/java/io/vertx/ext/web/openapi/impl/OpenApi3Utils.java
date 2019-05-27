@@ -291,13 +291,16 @@ public class OpenApi3Utils {
     String combinatorKeyword = fakeSchema.containsKey("allOf") ? "allOf" : fakeSchema.containsKey("anyOf") ? "anyOf" : fakeSchema.containsKey("oneOf") ? "oneOf" : null;
     if (combinatorKeyword != null) {
       JsonArray schemasArray = fakeSchema.getJsonArray(combinatorKeyword);
+      JsonArray processedSchemas = new JsonArray();
       for (int i = 0; i < schemasArray.size(); i++) {
         JsonObject innerSchema = holder.solveIfNeeded(schemasArray.getJsonObject(i));
-        if (!"object".equals(innerSchema.getString("type")) || !innerSchema.containsKey("properties") || innerSchema.containsKey("items"))
-          throw new IllegalArgumentException("Combinator keyword contains a non object schema");
-        fakeSchema = fakeSchema.mergeIn(innerSchema, true);
+        processedSchemas.add(innerSchema.copy());
+        schemasArray.getJsonObject(i).mergeIn(innerSchema);
+        if ("object".equals(innerSchema.getString("type")) || innerSchema.containsKey("properties"))
+          fakeSchema = fakeSchema.mergeIn(innerSchema, true);
       }
       fakeSchema.remove(combinatorKeyword);
+      fakeSchema.put("x-" + combinatorKeyword, processedSchemas);
     }
     if (fakeSchema.containsKey("properties")) {
       JsonObject propsObj = fakeSchema.getJsonObject("properties");
@@ -311,6 +314,10 @@ public class OpenApi3Utils {
 
     return fakeSchema;
 
+  }
+
+  public static boolean isFakeSchemaAnyOfOrOneOf(JsonObject fakeSchema) {
+    return fakeSchema.containsKey("x-anyOf") || fakeSchema.containsKey("x-oneOf");
   }
 
 }

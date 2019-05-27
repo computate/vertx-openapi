@@ -111,10 +111,14 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   @Test
   public void loadSpecFromURL(Vertx vertx, VertxTestContext testContext) {
     startFileServer(vertx, testContext).setHandler(h -> {
-      RouterFactory.create(vertx, "http://localhost:8081/specs/router_factory_test.yaml",
+      RouterFactory.create(vertx, "http://localhost:9001/specs/router_factory_test.yaml",
         routerFactoryAsyncResult -> {
-          assertThat(routerFactoryAsyncResult.succeeded()).isTrue();
-          assertThat(routerFactoryAsyncResult.result()).isNotNull();
+          testContext.verify(() -> {
+            assertThat(routerFactoryAsyncResult.succeeded())
+              .isTrue();
+            assertThat(routerFactoryAsyncResult.result())
+              .isNotNull();
+          });
           testContext.completeNow();
         });
     });
@@ -125,7 +129,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     startSecuredFileServer(vertx, testContext).setHandler(h -> {
       RouterFactory.create(
         vertx,
-        "http://localhost:8081/specs/router_factory_test.yaml",
+        "http://localhost:9001/specs/router_factory_test.yaml",
         new OpenAPILoaderOptions()
           .putAuthHeader("Authorization", "Bearer xx.yy.zz"),
         routerFactoryAsyncResult -> {
@@ -139,7 +143,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   @Test
   public void failLoadSpecFromURL(Vertx vertx, VertxTestContext testContext) {
     startFileServer(vertx, testContext).setHandler(h -> {
-      RouterFactory.create(vertx, "http://localhost:8081/specs/does_not_exist.yaml",
+      RouterFactory.create(vertx, "http://localhost:9001/specs/does_not_exist.yaml",
         routerFactoryAsyncResult -> {
           assertThat(routerFactoryAsyncResult.failed()).isTrue();
           assertThat(routerFactoryAsyncResult.cause().getClass()).isEqualTo(RouterFactoryException.class);
@@ -493,7 +497,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
   @Test
   public void consumesTest(Vertx vertx, VertxTestContext testContext) {
-    Checkpoint checkpoint = testContext.checkpoint(3);
+    Checkpoint checkpoint = testContext.checkpoint(4);
 
     loadFactoryAndStartServer(vertx, "src/test/resources/specs/produces_consumes_test.yaml", testContext, routerFactory -> {
         routerFactory.setOptions(new RouterFactoryOptions().setMountNotImplementedHandler(false));
@@ -530,9 +534,14 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
       MultipartForm multipartForm = MultipartForm.create();
       form.add("name", "francesco");
       testRequest(client, HttpMethod.POST, "/consumesTest")
-        .expect(statusCode(200))
-        .expect(jsonBodyResponse(obj))
+        .expect(statusCode(400))
+        .expect(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.MISSING_MATCHING_BODY_PROCESSOR))
         .sendMultipartForm(multipartForm, testContext, checkpoint);
+
+      testRequest(client, HttpMethod.POST, "/consumesTest")
+        .expect(statusCode(400))
+        .expect(failurePredicateResponse())
+        .send(testContext, checkpoint);
     });
   }
 
@@ -843,7 +852,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .send(testContext, checkpoint);
       testRequest(client, HttpMethod.GET, "/pets/three")
         .expect(statusCode(400))
-        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "petId", ParameterLocation.PATH))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.PARSING_ERROR, "petId", ParameterLocation.PATH))
         .send(testContext, checkpoint);
     });
   }
@@ -997,6 +1006,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
   @Test
   public void testAllowEmptyValueBooleanQueryParameter(Vertx vertx, VertxTestContext testContext) {
+    Checkpoint checkpoint = testContext.checkpoint(3);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
       routerFactory
         .operation("testDefaultBoolean")
@@ -1005,11 +1015,17 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
             "" + ((RequestParameters)routingContext.get("parsedParameters")).queryParameter("parameter").toString()
           ).end()
         );
-    }).setHandler(h ->
+    }).setHandler(h -> {
       testRequest(client, HttpMethod.GET, "/queryTests/defaultBoolean?parameter")
+        .expect(statusCode(200), statusMessage("false"))
+        .send(testContext, checkpoint);
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultBoolean")
+        .expect(statusCode(200), statusMessage("false"))
+        .send(testContext, checkpoint);
+      testRequest(client, HttpMethod.GET, "/queryTests/defaultBoolean?parameter=true")
         .expect(statusCode(200), statusMessage("true"))
-        .send(testContext)
-    );
+        .send(testContext, checkpoint);
+    });
   }
 
   @Test
@@ -1033,6 +1049,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
   public void testFormArrayParameter(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(2);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory.setOptions(HANDLERS_TESTS_OPTIONS);
       routerFactory
         .operation("formArrayTest")
         .handler(routingContext -> {
@@ -1051,12 +1068,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
     }).setHandler(h -> {
       testRequest(client, HttpMethod.POST, "/formTests/arraytest")
         .expect(statusCode(200), statusMessage("a+b+c" + "10,8,4"))
-        .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "a+b+c").add("values", "10,8,4"), testContext, checkpoint);
+        .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "a+b+c").add("values", (Iterable<String>) Arrays.asList("10", "8", "4")), testContext, checkpoint);
 
       testRequest(client, HttpMethod.POST, "/formTests/arraytest")
         .expect(statusCode(400))
-        .expect(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.VALIDATION_ERROR))
-        .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "id").add("values", "8,bla,2"), testContext, checkpoint);
+        .expect(badBodyResponse(BodyProcessorException.BodyProcessorErrorType.PARSING_ERROR))
+        .sendURLEncodedForm(MultiMap.caseInsensitiveMultiMap().add("id", "id").add("values", (Iterable<String>) Arrays.asList("10", "bla", "4")), testContext, checkpoint);
     });
   }
 
@@ -1163,7 +1180,7 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
 
   @Test
   public void testQueryParameterAnyOf(Vertx vertx, VertxTestContext testContext) {
-    Checkpoint checkpoint = testContext.checkpoint(3);
+    Checkpoint checkpoint = testContext.checkpoint(5);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
       routerFactory
         .operation("anyOfTest")
@@ -1183,18 +1200,29 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .expect(statusCode(200), statusMessage("5"))
         .send(testContext, checkpoint);
 
+
+      testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=5,4")
+        .expect(statusCode(200), statusMessage(new JsonArray().add(5).add(4).encode()))
+        .send(testContext, checkpoint);
+
+      testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=a,5")
+        .expect(statusCode(200), statusMessage(new JsonObject().put("a", 5).encode()))
+        .send(testContext, checkpoint);
+
       testRequest(client, HttpMethod.GET, "/queryTests/anyOfTest?parameter=bla")
         .expect(statusCode(400))
-        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.VALIDATION_ERROR, "parameter", ParameterLocation.QUERY))
+        .expect(badParameterResponse(ParameterProcessorException.ParameterProcessorErrorType.PARSING_ERROR, "parameter", ParameterLocation.QUERY))
         .send(testContext, checkpoint);
 
     });
   }
 
+  @Timeout(2000)
   @Test
   public void testComplexMultipart(Vertx vertx, VertxTestContext testContext) {
     Checkpoint checkpoint = testContext.checkpoint(2);
     loadFactoryAndStartServer(vertx, VALIDATION_SPEC, testContext, routerFactory -> {
+      routerFactory.setOptions(HANDLERS_TESTS_OPTIONS);
       routerFactory
         .operation("complexMultipartRequest")
         .handler(routingContext -> {
@@ -1219,9 +1247,12 @@ public class RouterFactoryIntegrationTest extends BaseRouterFactoryTest {
         .textFileUpload("param1", "random.txt", "src/test/resources/random.txt", "text/plain")
         .attribute("param2", pet.encode())
         .textFileUpload("param3", "random.csv", "src/test/resources/random.txt", "text/csv")
-        .attribute("param4", "1.2,5.2,6.2")
+        .attribute("param4", "1.2")
+        .attribute("param4", "5.2")
+        .attribute("param4", "6.2")
         .attribute("param5", "2")
-        .binaryFileUpload("param1Binary", "random-file", "src/test/resources/random-file", "text/plain");
+        .binaryFileUpload("param1NotRealBinary", "random-file", "src/test/resources/random-file", "text/plain")
+        .binaryFileUpload("param1Binary", "random-file", "src/test/resources/random-file", "application/octet-stream");
 
       JsonObject expected = new JsonObject()
         .put("param2", pet)
