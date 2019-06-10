@@ -2,10 +2,10 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.ParameterLocation;
-import io.vertx.ext.web.validation.ParameterProcessor;
-import io.vertx.ext.web.validation.impl.ExplodedObjectValueParameterParser;
-import io.vertx.ext.web.validation.impl.ParameterProcessorImpl;
+import io.vertx.ext.web.validation.impl.ParameterLocation;
+import io.vertx.ext.web.validation.impl.parameter.ParameterProcessor;
+import io.vertx.ext.web.validation.impl.parameter.ExplodedObjectValueParameterParser;
+import io.vertx.ext.web.validation.impl.parameter.ParameterProcessorImpl;
 import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 public class ExplodedObjectParameterProcessorGenerator implements ParameterProcessorGenerator {

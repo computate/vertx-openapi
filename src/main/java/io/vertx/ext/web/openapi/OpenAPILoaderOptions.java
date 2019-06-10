@@ -3,6 +3,7 @@ package io.vertx.ext.web.openapi;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.json.schema.SchemaRouterOptions;
 

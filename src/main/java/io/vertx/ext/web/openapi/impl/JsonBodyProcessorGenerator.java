@@ -3,8 +3,8 @@ package io.vertx.ext.web.openapi.impl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.impl.Utils;
-import io.vertx.ext.web.validation.BodyProcessor;
-import io.vertx.ext.web.validation.impl.JsonBodyProcessorImpl;
+import io.vertx.ext.web.validation.impl.body.BodyProcessor;
+import io.vertx.ext.web.validation.impl.body.JsonBodyProcessorImpl;
 
 public class JsonBodyProcessorGenerator implements BodyProcessorGenerator {
 

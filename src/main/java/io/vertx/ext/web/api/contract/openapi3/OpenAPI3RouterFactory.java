@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
  *   <li>User handlers or "Not implemented" handler</li>
  * </ol>
  *
+ * @deprecated This API will be removed, you should use new {@link RouterFactory}
  * @author Francesco Guardiani @slinkydeveloper
  */
 @VertxGen

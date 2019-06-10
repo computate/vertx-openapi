@@ -2,13 +2,13 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.ext.web.validation.MalformedValueException;
-import io.vertx.ext.web.validation.ParameterParser;
-import io.vertx.ext.web.validation.ValueParser;
+import io.vertx.ext.web.validation.impl.parameter.ParameterParser;
+import io.vertx.ext.web.validation.impl.parser.ValueParser;
 
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.ext.web.validation.impl.ExplodedObjectValueParameterParser.isExplodedObjectValueParameterParserWithAdditionalProperties;
+import static io.vertx.ext.web.validation.impl.parameter.ExplodedObjectValueParameterParser.isExplodedObjectValueParameterParserWithAdditionalProperties;
 
 public class AnyOfOneOfSingleParameterParser implements ParameterParser {
 

@@ -2,6 +2,7 @@ package io.vertx.ext.web.openapi;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -59,8 +60,19 @@ import java.util.function.Function;
 @VertxGen
 public interface RouterFactory {
 
-  Operation operation(String operationId);
+  /**
+   * Access to an operation defined in the contract with {@code operationId}
+   *
+   * @param operationId
+   * @return
+   */
+  @Nullable Operation operation(String operationId);
 
+  /**
+   * Access to all operations defined in the contract
+   *
+   * @return
+   */
   List<Operation> operations();
 
   /**
@@ -76,7 +88,7 @@ public interface RouterFactory {
    * Please note that you should not add a body handler inside that list. If you want to modify the body handler, please use {@link RouterFactory#bodyHandler(BodyHandler)}
    *
    * @param rootHandler
-   * @return this object
+   * @return this factory
    */
   @Fluent
   RouterFactory rootHandler(Handler<RoutingContext> rootHandler);
@@ -86,7 +98,7 @@ public interface RouterFactory {
    *
    * @param securitySchemaName
    * @param handler
-   * @return
+   * @return this factory
    */
   @Fluent
   RouterFactory securityHandler(String securitySchemaName, Handler<RoutingContext> handler);
@@ -124,30 +136,35 @@ public interface RouterFactory {
    * Set options of router factory. For more info {@link RouterFactoryOptions}
    *
    * @param options
-   * @return
+   * @return this factory
    */
   @Fluent
   RouterFactory setOptions(RouterFactoryOptions options);
 
   /**
-   * Get options of router factory. For more info {@link RouterFactoryOptions}
-   *
-   * @return
+   * @return options of router factory. For more info {@link RouterFactoryOptions}
    */
   RouterFactoryOptions getOptions();
 
+  /**
+   * @return holder used by this factory to process the OpenAPI. You can use it to resolve {@code $ref}s
+   */
   OpenAPIHolder getOpenAPI();
 
-  @GenIgnore //TODO
+  /**
+   * @return schema router used by this factory to internally manage all {@link io.vertx.ext.json.schema.Schema} instances
+   */
   SchemaRouter getSchemaRouter();
 
-  @GenIgnore //TODO
+  /**
+   * @return schema parser used by this factory to parse all {@link io.vertx.ext.json.schema.Schema}
+   */
   SchemaParser getSchemaParser();
 
   /**
    * When set, this function is called while creating the payload of {@link io.vertx.ext.web.api.service.ServiceRequest}
    * @param serviceExtraPayloadMapper
-   * @return
+   * @return this factory
    */
   @Fluent
   RouterFactory serviceExtraPayloadMapper(Function<RoutingContext, JsonObject> serviceExtraPayloadMapper);
@@ -155,7 +172,8 @@ public interface RouterFactory {
   /**
    * Construct a new router based on spec. It will fail if you are trying to mount a spec with security schemes
    * without assigned handlers<br/>
-   * <b>Note:</b> Router is constructed in this function, so it will be respected the path definition ordering.
+   *
+   * <b>Note:</b> Router is built when this function is called and the path definition ordering in contract is respected.
    *
    * @return
    */
@@ -165,7 +183,7 @@ public interface RouterFactory {
    * Create a new OpenAPI3RouterFactory
    *
    * @param vertx
-   * @param url location of your spec. It can be an absolute path, a local path or remote url (with HTTP protocol)
+   * @param url location of your spec. It can be an absolute path, a local path or remote url (with HTTP/HTTPS protocol)
    * @param handler  When specification is loaded, this handler will be called with AsyncResult<OpenAPI3RouterFactory>
    */
   static void create(Vertx vertx, String url, Handler<AsyncResult<RouterFactory>> handler) {
@@ -176,7 +194,8 @@ public interface RouterFactory {
    * Create a new OpenAPI3RouterFactory
    *
    * @param vertx
-   * @param url location of your spec. It can be an absolute path, a local path or remote url (with HTTP protocol)
+   * @param url location of your spec. It can be an absolute path, a local path or remote url (with HTTP/HTTPS protocol)
+   * @param options options for specification loading
    * @param handler  When specification is loaded, this handler will be called with AsyncResult<OpenAPI3RouterFactory>
    */
   static void create(Vertx vertx,

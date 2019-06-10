@@ -4,12 +4,12 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.validation.MalformedValueException;
-import io.vertx.ext.web.validation.ParameterLocation;
-import io.vertx.ext.web.validation.ParameterProcessor;
-import io.vertx.ext.web.validation.ValueParser;
-import io.vertx.ext.web.validation.impl.ObjectParser;
-import io.vertx.ext.web.validation.impl.ParameterProcessorImpl;
-import io.vertx.ext.web.validation.impl.SingleValueParameterParser;
+import io.vertx.ext.web.validation.impl.ParameterLocation;
+import io.vertx.ext.web.validation.impl.parameter.ParameterProcessor;
+import io.vertx.ext.web.validation.impl.parser.ValueParser;
+import io.vertx.ext.web.validation.impl.parser.ObjectParser;
+import io.vertx.ext.web.validation.impl.parameter.ParameterProcessorImpl;
+import io.vertx.ext.web.validation.impl.parameter.SingleValueParameterParser;
 import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 import java.util.Map;

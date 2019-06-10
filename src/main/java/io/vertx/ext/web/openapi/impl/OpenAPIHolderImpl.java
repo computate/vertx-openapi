@@ -14,12 +14,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.json.schema.Schema;
 import io.vertx.ext.json.schema.SchemaParser;
-import io.vertx.ext.json.schema.SchemaParserOptions;
 import io.vertx.ext.json.schema.SchemaRouter;
 import io.vertx.ext.json.schema.draft7.Draft7SchemaParser;
-import io.vertx.ext.json.schema.generic.ObservableFuture;
-import io.vertx.ext.json.schema.generic.SchemaURNId;
-import io.vertx.ext.json.schema.generic.URIUtils;
+import io.vertx.ext.json.schema.common.ObservableFuture;
+import io.vertx.ext.json.schema.common.SchemaURNId;
+import io.vertx.ext.json.schema.common.URIUtils;
 import io.vertx.ext.web.openapi.OpenAPIHolder;
 import io.vertx.ext.web.openapi.OpenAPILoaderOptions;
 
@@ -68,9 +67,9 @@ public class OpenAPIHolderImpl implements OpenAPIHolder {
     this.fs = fs;
     this.options = options;
     this.router = SchemaRouter.create(client, fs, options.toSchemaRouterOptions());
-    this.parser = Draft7SchemaParser.create(new SchemaParserOptions(), this.router);
+    this.parser = Draft7SchemaParser.create(this.router);
     this.yamlMapper = new YAMLMapper();
-    this.openapiSchema = parser.parse(openapiSchemaJson, openapiSchemaURI);
+    this.openapiSchema = parser.parse(openapiSchemaJson, JsonPointer.fromURI(openapiSchemaURI));
   }
 
   public Future<JsonObject> loadOpenAPI(String u) {

@@ -2,11 +2,11 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.BodyProcessor;
+import io.vertx.ext.web.validation.impl.body.BodyProcessor;
 import io.vertx.ext.web.validation.RequestPredicate;
-import io.vertx.ext.web.validation.ValueParser;
-import io.vertx.ext.web.validation.impl.FormBodyProcessorImpl;
-import io.vertx.ext.web.validation.impl.FormValueParser;
+import io.vertx.ext.web.validation.impl.parser.ValueParser;
+import io.vertx.ext.web.validation.impl.body.FormBodyProcessorImpl;
+import io.vertx.ext.web.validation.impl.body.FormValueParser;
 import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 import java.util.List;
@@ -47,14 +47,14 @@ public class MultipartFormBodyProcessorGenerator implements BodyProcessorGenerat
         } else if ("string".equals(propSchema.getString("type")) &&
           ("binary".equals(propSchema.getString("format")) || "base64".equals(propSchema.getString("format")))) {
           context.addPredicate(
-            RequestPredicate.multipartFileUploadExists(pe.getKey(), Pattern.compile(Pattern.quote("application/octet-stream")))
+            RequestPredicate.multipartFileUploadExists(pe.getKey(), Pattern.quote("application/octet-stream"))
           );
           propertiesValueParsers.remove(pe.getKey());
           searchPropAndRemoveInSchema(schemas.getNormalizedSchema(), pe.getKey());
         }
       } else {
         context.addPredicate(
-          RequestPredicate.multipartFileUploadExists(pe.getKey(), Pattern.compile(OpenApi3Utils.resolveContentTypeRegex(encoding)))
+          RequestPredicate.multipartFileUploadExists(pe.getKey(), OpenApi3Utils.resolveContentTypeRegex(encoding))
         );
         propertiesValueParsers.remove(pe.getKey());
         searchPropAndRemoveInSchema(schemas.getNormalizedSchema(), pe.getKey());

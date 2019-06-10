@@ -2,8 +2,8 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.BodyProcessor;
-import io.vertx.ext.web.validation.impl.FormBodyProcessorImpl;
+import io.vertx.ext.web.validation.impl.body.BodyProcessor;
+import io.vertx.ext.web.validation.impl.body.FormBodyProcessorImpl;
 import io.vertx.ext.web.validation.impl.ValueParserInferenceUtils;
 
 public class UrlEncodedFormBodyProcessorGenerator implements BodyProcessorGenerator {

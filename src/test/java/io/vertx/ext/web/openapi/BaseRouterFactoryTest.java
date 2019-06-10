@@ -1,14 +1,11 @@
 package io.vertx.ext.web.openapi;
 
-
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.json.schema.SchemaParser;
-import io.vertx.ext.json.schema.SchemaParserOptions;
 import io.vertx.ext.json.schema.SchemaRouter;
 import io.vertx.ext.json.schema.SchemaRouterOptions;
-import io.vertx.ext.json.schema.draft7.Draft7SchemaParser;
 import io.vertx.ext.json.schema.openapi3.OpenAPI3SchemaParser;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
@@ -34,7 +31,7 @@ public abstract class BaseRouterFactoryTest {
   @BeforeEach
   public void setUp(Vertx vertx) {
     schemaRouter = SchemaRouter.create(vertx, new SchemaRouterOptions());
-    parser = OpenAPI3SchemaParser.create(new SchemaParserOptions(), schemaRouter);
+    parser = OpenAPI3SchemaParser.create(schemaRouter);
     client = WebClient.create(vertx, new WebClientOptions().setDefaultPort(9000).setDefaultHost("localhost"));
   }
 

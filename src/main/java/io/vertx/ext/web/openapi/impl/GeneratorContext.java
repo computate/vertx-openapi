@@ -6,7 +6,7 @@ import io.vertx.ext.json.schema.SchemaParser;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.validation.RequestPredicateResult;
-import io.vertx.ext.web.validation.impl.SchemaValidator;
+import io.vertx.ext.web.validation.impl.validator.SchemaValidator;
 
 import java.util.ArrayList;
 import java.util.HashMap;

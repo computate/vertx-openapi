@@ -3,7 +3,7 @@ package io.vertx.ext.web.openapi.impl;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.BodyProcessor;
+import io.vertx.ext.web.validation.impl.body.BodyProcessor;
 
 public interface BodyProcessorGenerator {
 

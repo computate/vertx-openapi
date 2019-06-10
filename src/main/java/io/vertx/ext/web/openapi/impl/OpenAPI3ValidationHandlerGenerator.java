@@ -4,9 +4,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.json.schema.SchemaParser;
 import io.vertx.ext.web.openapi.RouterFactoryException;
-import io.vertx.ext.web.validation.BodyProcessor;
-import io.vertx.ext.web.validation.ParameterLocation;
-import io.vertx.ext.web.validation.ParameterProcessor;
+import io.vertx.ext.web.validation.impl.body.BodyProcessor;
+import io.vertx.ext.web.validation.impl.ParameterLocation;
+import io.vertx.ext.web.validation.impl.parameter.ParameterProcessor;
 import io.vertx.ext.web.validation.RequestPredicate;
 import io.vertx.ext.web.validation.impl.ValidationHandlerImpl;
 
@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//TODO this is where the inference logic should move
 public class OpenAPI3ValidationHandlerGenerator {
 
   private static final JsonPointer BODY_REQUIRED_POINTER = JsonPointer.from("/requestBody/required");
@@ -66,8 +65,6 @@ public class OpenAPI3ValidationHandlerGenerator {
       ParameterProcessorGenerator generator = parameterProcessorGenerators.stream()
         .filter(g -> g.canGenerate(pe.getValue(), fakeSchema, parsedLocation, parsedStyle))
         .findFirst().orElseThrow(() -> RouterFactoryException.cannotFindParameterProcessorGenerator(pe.getKey(), pe.getValue()));
-
-      System.out.println("Parametro " + pe.getKey() + " smandruppato da " + generator.getClass().getName());
 
       try {
         ParameterProcessor generated = generator

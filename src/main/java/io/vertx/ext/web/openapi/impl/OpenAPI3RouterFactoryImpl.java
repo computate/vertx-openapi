@@ -8,7 +8,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.json.schema.SchemaParser;
-import io.vertx.ext.json.schema.SchemaParserOptions;
 import io.vertx.ext.json.schema.SchemaRouter;
 import io.vertx.ext.json.schema.openapi3.OpenAPI3SchemaParser;
 import io.vertx.ext.web.Route;
@@ -68,10 +67,10 @@ public class OpenAPI3RouterFactoryImpl implements RouterFactory {
     this.bodyHandler = BodyHandler.create();
     this.globalHandlers = new ArrayList<>();
     this.schemaRouter = SchemaRouter.create(vertx, options.toSchemaRouterOptions());
-    this.schemaParser = OpenAPI3SchemaParser.create(new SchemaParserOptions(), schemaRouter);
+    this.schemaParser = OpenAPI3SchemaParser.create(schemaRouter);
     this.validationHandlerGenerator = new OpenAPI3ValidationHandlerGenerator(spec, schemaParser);
 
-    spec.getAbsolutePaths().forEach((u, jo) -> schemaRouter.addJsonStructure(u, jo));
+    spec.getAbsolutePaths().forEach((u, jo) -> schemaRouter.addJson(u, jo));
 
     // Load default generators
     this.validationHandlerGenerator

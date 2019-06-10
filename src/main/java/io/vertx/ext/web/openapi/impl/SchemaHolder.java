@@ -4,7 +4,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.impl.SchemaValidator;
+import io.vertx.ext.web.validation.impl.validator.SchemaValidator;
 
 public interface SchemaHolder {
 

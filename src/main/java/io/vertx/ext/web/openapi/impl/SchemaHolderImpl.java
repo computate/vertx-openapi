@@ -2,7 +2,7 @@ package io.vertx.ext.web.openapi.impl;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.impl.SchemaValidator;
+import io.vertx.ext.web.validation.impl.validator.SchemaValidator;
 
 import java.util.Map;
 import java.util.function.BiFunction;

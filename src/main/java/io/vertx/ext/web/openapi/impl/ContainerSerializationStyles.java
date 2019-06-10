@@ -1,9 +1,9 @@
 package io.vertx.ext.web.openapi.impl;
 
-import io.vertx.ext.web.validation.dsl.ArrayParserFactory;
-import io.vertx.ext.web.validation.dsl.ObjectParserFactory;
-import io.vertx.ext.web.validation.impl.SplitterCharArrayParser;
-import io.vertx.ext.web.validation.impl.SplitterCharObjectParser;
+import io.vertx.ext.web.validation.builder.ArrayParserFactory;
+import io.vertx.ext.web.validation.builder.ObjectParserFactory;
+import io.vertx.ext.web.validation.impl.parser.SplitterCharArrayParser;
+import io.vertx.ext.web.validation.impl.parser.SplitterCharObjectParser;
 
 public enum ContainerSerializationStyles {
   CSV(

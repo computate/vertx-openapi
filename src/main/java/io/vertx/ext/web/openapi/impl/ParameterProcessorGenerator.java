@@ -1,10 +1,9 @@
 package io.vertx.ext.web.openapi.impl;
 
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
-import io.vertx.ext.web.validation.ParameterLocation;
-import io.vertx.ext.web.validation.ParameterProcessor;
+import io.vertx.ext.web.validation.impl.ParameterLocation;
+import io.vertx.ext.web.validation.impl.parameter.ParameterProcessor;
 
 public interface ParameterProcessorGenerator {
 
